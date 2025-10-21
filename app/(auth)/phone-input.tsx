@@ -1,13 +1,20 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
-import { COLORS } from '../../lib/constants';
+import { useSignUp } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { COLORS } from "../../lib/constants";
 
 export default function PhoneInputScreen() {
   const { signUp, isLoaded } = useSignUp();
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -17,8 +24,8 @@ export default function PhoneInputScreen() {
       setLoading(true);
 
       // Phone number must be in E.164 format
-      const formattedPhone = phoneNumber.startsWith('+') 
-        ? phoneNumber 
+      const formattedPhone = phoneNumber.startsWith("+")
+        ? phoneNumber
         : `+1${phoneNumber}`;
 
       // Create sign up with phone number
@@ -31,12 +38,12 @@ export default function PhoneInputScreen() {
 
       // Navigate to OTP verification screen
       router.push({
-        pathname: '/auth/verify-otp',
+        pathname: "/(auth)/verify-otp",
         params: { phoneNumber: formattedPhone },
       });
     } catch (error: any) {
-      Alert.alert('Error', error.errors?.[0]?.message || 'Failed to send code');
-      console.error('Sign up error:', error);
+      Alert.alert("Error", error.errors?.[0]?.message || "Failed to send code");
+      console.error("Sign up error:", error);
     } finally {
       setLoading(false);
     }
@@ -59,9 +66,7 @@ export default function PhoneInputScreen() {
           onChangeText={setPhoneNumber}
           autoFocus
         />
-        <Text style={styles.hint}>
-          Include country code (e.g., +1 for US)
-        </Text>
+        <Text style={styles.hint}>Include country code (e.g., +1 for US)</Text>
       </View>
 
       <TouchableOpacity
@@ -70,7 +75,7 @@ export default function PhoneInputScreen() {
         disabled={loading || !phoneNumber}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Sending...' : 'Send Code'}
+          {loading ? "Sending..." : "Send Code"}
         </Text>
       </TouchableOpacity>
     </View>
@@ -85,7 +90,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 40,
     marginBottom: 10,
     color: COLORS.black,
@@ -100,7 +105,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
     color: COLORS.black,
   },
@@ -120,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -128,6 +133,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

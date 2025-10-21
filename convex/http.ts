@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
-import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { httpAction } from "./_generated/server";
 
 const http = httpRouter();
 
@@ -20,15 +20,15 @@ http.route({
         case "user.updated": {
           // Extract user data from Clerk payload
           const phoneNumber =
-            data.phone_numbers?.[0]?.phone_number || 
-            data.primary_phone_number_id || 
+            data.phone_numbers?.[0]?.phone_number ||
+            data.primary_phone_number_id ||
             "";
-          
+
           const firstName = data.first_name || "";
           const lastName = data.last_name || "";
           const name = `${firstName} ${lastName}`.trim() || "User";
 
-          await ctx.runMutation(internal.users.upsertFromClerk, {
+          await ctx.runMutation(internal.users.upsertFromClerkInternal, {
             clerkId: data.id,
             phoneNumber,
             name,
@@ -53,10 +53,13 @@ http.route({
       });
     } catch (error) {
       console.error("Webhook error:", error);
-      return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Webhook processing failed" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
   }),
 });

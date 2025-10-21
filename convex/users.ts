@@ -1,7 +1,44 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
-// Create or update user from Clerk webhook
+// Create or update user from Clerk webhook (internal - called by webhook)
+export const upsertFromClerkInternal = internalMutation({
+  args: {
+    clerkId: v.string(),
+    phoneNumber: v.string(),
+    name: v.optional(v.string()),
+    profilePicUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (existingUser) {
+      // Update existing user
+      await ctx.db.patch(existingUser._id, {
+        phoneNumber: args.phoneNumber,
+        name: args.name ?? existingUser.name,
+        profilePicUrl: args.profilePicUrl ?? existingUser.profilePicUrl,
+        lastSeen: Date.now(),
+      });
+      return existingUser._id;
+    } else {
+      // Create new user
+      return await ctx.db.insert("users", {
+        clerkId: args.clerkId,
+        phoneNumber: args.phoneNumber,
+        name: args.name ?? "User",
+        profilePicUrl: args.profilePicUrl,
+        isOnline: true,
+        lastSeen: Date.now(),
+      });
+    }
+  },
+});
+
+// Create or update user (public - called from client)
 export const upsertFromClerk = mutation({
   args: {
     clerkId: v.string(),

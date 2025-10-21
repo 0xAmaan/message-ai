@@ -12,16 +12,12 @@ export const createOrGetConversation = mutation({
     if (args.type === "direct" && args.participants.length === 2) {
       const existing = await ctx.db
         .query("conversations")
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("type"), "direct"),
-            q.eq(q.field("participants").length(), 2)
-          )
-        )
+        .filter((q) => q.eq(q.field("type"), "direct"))
         .collect();
 
       const found = existing.find((conv) => {
         return (
+          conv.participants.length === 2 &&
           conv.participants.includes(args.participants[0]) &&
           conv.participants.includes(args.participants[1])
         );
@@ -45,10 +41,10 @@ export const getUserConversations = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     const allConversations = await ctx.db.query("conversations").collect();
-    
+
     // Filter conversations where user is a participant
     const userConversations = allConversations.filter((conv) =>
-      conv.participants.includes(args.clerkId)
+      conv.participants.includes(args.clerkId),
     );
 
     // Sort by last message time
@@ -77,7 +73,7 @@ export const getConversationParticipants = query({
           .query("users")
           .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
           .first();
-      })
+      }),
     );
 
     return participants.filter((p) => p !== null);
