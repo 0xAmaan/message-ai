@@ -1,0 +1,47 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  // Users table - synced from Clerk
+  users: defineTable({
+    clerkId: v.string(),
+    phoneNumber: v.string(),
+    name: v.string(),
+    profilePicUrl: v.optional(v.string()),
+    isOnline: v.boolean(),
+    lastSeen: v.number(),
+  })
+    .index("by_clerk_id", ["clerkId"])
+    .index("by_phone", ["phoneNumber"]),
+
+  // Conversations - handles both 1-1 and group chats
+  conversations: defineTable({
+    participants: v.array(v.string()), // array of clerkIds
+    type: v.union(v.literal("direct"), v.literal("group")),
+    lastMessageAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_participant", ["participants"]),
+
+  // Messages
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.string(), // clerkId
+    content: v.string(),
+    imageId: v.optional(v.id("_storage")), // Convex file storage ID
+    createdAt: v.number(),
+    readBy: v.array(v.string()), // array of clerkIds
+    deliveredTo: v.array(v.string()), // array of clerkIds
+  })
+    .index("by_conversation", ["conversationId", "createdAt"])
+    .index("by_sender", ["senderId"]),
+
+  // Typing indicators (ephemeral data for real-time UX)
+  typingIndicators: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.string(), // clerkId
+    isTyping: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_user_conversation", ["userId", "conversationId"]),
+});
