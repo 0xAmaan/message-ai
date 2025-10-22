@@ -33,56 +33,59 @@ export default function ChatsScreen() {
   // Loading state
   if (conversations === undefined) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
-        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-          <View>
-            <Text className="text-sm text-gray-400">Welcome back,</Text>
-            <Text className="text-xl font-bold text-gray-50 mt-1">
-              {userIdentifier}
-            </Text>
+      <View className="flex-1 bg-gray-900">
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
+            <View>
+              <Text className="text-sm text-gray-400">Welcome back,</Text>
+              <Text className="text-xl font-bold text-gray-50 mt-1">
+                {userIdentifier}
+              </Text>
+            </View>
+            <SignOutButton />
           </View>
-          <SignOutButton />
-        </View>
+        </SafeAreaView>
         <View className="flex-1 justify-center items-center bg-gray-900">
           <ActivityIndicator size="large" color="#8B5CF6" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (conversations.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
-        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-          <View>
-            <Text className="text-sm text-gray-400">Welcome back,</Text>
-            <Text className="text-xl font-bold text-gray-50 mt-1">
-              {userIdentifier}
-            </Text>
+      <View className="flex-1 bg-gray-900">
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
+            <View>
+              <Text className="text-sm text-gray-400">Welcome back,</Text>
+              <Text className="text-xl font-bold text-gray-50 mt-1">
+                {userIdentifier}
+              </Text>
+            </View>
+            <SignOutButton />
           </View>
-          <SignOutButton />
-        </View>
+        </SafeAreaView>
 
         <View className="flex-1 justify-center items-center px-10 bg-gray-900">
-          <Text className="text-6xl mb-4">💬</Text>
+          <Text className="text-6xl mb-4 pt-10">💬</Text>
           <Text className="text-xl font-bold text-gray-50 mb-2">
             No chats yet
           </Text>
           <Text className="text-sm text-gray-400 text-center mb-8">
             Start a conversation by tapping the button below
           </Text>
-
-          <TouchableOpacity
-            className="bg-violet-600 px-8 py-4 rounded-full active:bg-violet-700"
-            onPress={() => router.push("/new-chat")}
-          >
-            <Text className="text-gray-50 text-base font-semibold">
-              + New Chat
-            </Text>
-          </TouchableOpacity>
         </View>
-      </SafeAreaView>
+
+        {/* Floating action button for new chat */}
+        <TouchableOpacity
+          className="absolute right-5 bottom-20 w-14 h-14 rounded-full bg-violet-600 justify-center items-center active:bg-violet-700 shadow-lg"
+          onPress={() => router.push("/new-chat")}
+        >
+          <Plus color="#F9FAFB" size={28} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
     );
   }
 
