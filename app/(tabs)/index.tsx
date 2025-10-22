@@ -1,14 +1,28 @@
 import { SignOutButton } from "@/components/SignOutButton";
+import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useQuery } from "convex/react";
+import { useRouter } from "expo-router";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ChatListItem } from "../../components/ChatListItem";
 import { COLORS } from "../../lib/constants";
 
 export default function ChatsScreen() {
   const { user } = useUser();
+  const router = useRouter();
 
   // Query conversations from Convex
-  // For now, we'll just show a placeholder since we haven't created the conversations schema yet
-  // const conversations = useQuery(api.conversations.list);
+  const conversations = useQuery(
+    api.conversations.getUserConversations,
+    user?.id ? { clerkId: user.id } : "skip",
+  );
 
   const userIdentifier =
     user?.username ||
@@ -16,9 +30,57 @@ export default function ChatsScreen() {
     user?.primaryEmailAddress?.emailAddress ||
     "User";
 
+  // Loading state
+  if (conversations === undefined) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.username}>{userIdentifier}</Text>
+          </View>
+          <SignOutButton />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  // Empty state
+  if (conversations.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.username}>{userIdentifier}</Text>
+          </View>
+          <SignOutButton />
+        </View>
+
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateIcon}>💬</Text>
+          <Text style={styles.emptyStateTitle}>No chats yet</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Start a conversation by tapping the button below
+          </Text>
+
+          <TouchableOpacity
+            style={styles.newChatButton}
+            onPress={() => router.push("/new-chat")}
+          >
+            <Text style={styles.newChatButtonText}>+ New Chat</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // List of conversations
   return (
     <View style={styles.container}>
-      {/* Header with user info and sign out */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Welcome back,</Text>
@@ -27,31 +89,22 @@ export default function ChatsScreen() {
         <SignOutButton />
       </View>
 
-      {/* Empty state - no conversations yet */}
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateIcon}>💬</Text>
-        <Text style={styles.emptyStateTitle}>No chats yet</Text>
-        <Text style={styles.emptyStateSubtitle}>
-          Start a conversation by tapping the button below
-        </Text>
-
-        <TouchableOpacity
-          style={styles.newChatButton}
-          onPress={() => {
-            // TODO: Navigate to new chat screen (Phase 7)
-            console.log("New chat button pressed");
-          }}
-        >
-          <Text style={styles.newChatButtonText}>+ New Chat</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Future: List of conversations */}
-      {/* <FlatList
+      <FlatList
         data={conversations}
-        renderItem={({ item }) => <ChatListItem conversation={item} />}
+        renderItem={({ item }) => (
+          <ChatListItem conversation={item} currentUserId={user?.id || ""} />
+        )}
         keyExtractor={(item) => item._id}
-      /> */}
+        contentContainerStyle={styles.listContent}
+      />
+
+      {/* Floating action button for new chat */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push("/new-chat")}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -79,6 +132,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: COLORS.black,
     marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyState: {
     flex: 1,
@@ -117,5 +175,29 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: "600",
+  },
+  listContent: {
+    paddingBottom: 80, // Space for FAB
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  fabText: {
+    color: COLORS.white,
+    fontSize: 28,
+    fontWeight: "300",
   },
 });

@@ -22,6 +22,8 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === "(auth)";
     const inTabsGroup = segments[0] === "(tabs)";
+    const isOnNewChat = segments[0] === "new-chat";
+    const isOnChat = segments[0] === "chat";
 
     console.log("Auth state:", {
       isSignedIn,
@@ -30,7 +32,10 @@ function RootLayoutNav() {
       inTabsGroup,
     });
 
-    if (isSignedIn && !inTabsGroup) {
+    // Allow authenticated routes: tabs, new-chat, chat
+    const isInAuthenticatedRoute = inTabsGroup || isOnNewChat || isOnChat;
+
+    if (isSignedIn && !isInAuthenticatedRoute) {
       // Redirect signed-in users to tabs
       router.replace("/(tabs)");
     } else if (!isSignedIn && !inAuthGroup) {
