@@ -28,12 +28,15 @@ export const registerForPushNotifications = async () => {
     }
 
     // Get the push token
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-    });
+    // TODO: Add projectId for production push notifications
+    // const token = await Notifications.getExpoPushTokenAsync({
+    //   projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+    // });
+    // console.log("Push token:", token.data);
+    // return token.data;
 
-    console.log("Push token:", token.data);
-    return token.data;
+    console.log("Push notifications disabled for development");
+    return null;
   } catch (error) {
     console.error("Error getting push token:", error);
     return null;

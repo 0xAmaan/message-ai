@@ -73,15 +73,19 @@ function RootLayoutNav() {
         });
 
       return () => {
-        if (notificationListener.current) {
-          Notifications.removeNotificationSubscription(
-            notificationListener.current,
-          );
-        }
-        if (responseListener.current) {
-          Notifications.removeNotificationSubscription(
-            responseListener.current,
-          );
+        try {
+          if (notificationListener.current && Notifications.removeNotificationSubscription) {
+            Notifications.removeNotificationSubscription(
+              notificationListener.current,
+            );
+          }
+          if (responseListener.current && Notifications.removeNotificationSubscription) {
+            Notifications.removeNotificationSubscription(
+              responseListener.current,
+            );
+          }
+        } catch (error) {
+          console.log("Error cleaning up notifications:", error);
         }
       };
     }

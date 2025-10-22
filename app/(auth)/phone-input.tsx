@@ -52,6 +52,7 @@ export default function PhoneInputScreen() {
 
       // Sign in flow
       if (signIn) {
+        console.log("=== STARTING SIGN IN FLOW ===");
         await signIn.create({
           identifier: formattedPhone,
         });
@@ -63,9 +64,15 @@ export default function PhoneInputScreen() {
           )?.phoneNumberId,
         });
 
+        const navParams = {
+          phoneNumber: formattedPhone,
+          isSignUp: "false"
+        };
+        console.log("=== NAVIGATING TO VERIFY-OTP WITH PARAMS:", navParams);
+
         router.push({
           pathname: "/(auth)/verify-otp",
-          params: { phoneNumber: formattedPhone, isSignUp: "false" },
+          params: navParams,
         });
       }
     } catch (error: any) {
@@ -114,7 +121,8 @@ export default function PhoneInputScreen() {
       </View>
 
       <TouchableOpacity
-        className={`bg-violet-600 p-4 rounded-lg items-center ${loading || !phoneNumber ? "opacity-60" : "active:bg-violet-700"}`}
+        className="bg-violet-600 p-4 rounded-lg items-center"
+        style={{ opacity: loading || !phoneNumber ? 0.6 : 1 }}
         onPress={handleSubmit}
         disabled={loading || !phoneNumber}
       >
