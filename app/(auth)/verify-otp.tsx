@@ -33,30 +33,72 @@ export default function VerifyOTPScreen() {
       console.log("Created session ID:", signUpAttempt.createdSessionId);
       console.log("Missing fields:", signUpAttempt.missingFields);
       console.log("Unverified fields:", signUpAttempt.unverifiedFields);
-      console.log(
-        "Full signUpAttempt:",
-        JSON.stringify(signUpAttempt, null, 2),
-      );
 
-      // For phone-only authentication, Clerk often returns "missing_requirements"
-      // even though phone verification is complete. We need to set the session active.
-      if (signUpAttempt.createdSessionId) {
-        // Set the session as active - this is critical for Clerk + Convex integration
-        await setActive({ session: signUpAttempt.createdSessionId });
-        console.log("Session activated successfully!");
+      // Handle different sign-up statuses
+      if (signUpAttempt.status === "complete") {
+        // Sign-up is fully complete with a session
+        if (signUpAttempt.createdSessionId) {
+          await setActive({ session: signUpAttempt.createdSessionId });
+          console.log("Session activated successfully!");
+          router.replace("/(auth)/profile-setup");
+        } else {
+          console.error("Sign up complete but no session ID");
+          Alert.alert(
+            "Error",
+            "Sign-up completed but session creation failed. Please try again.",
+          );
+        }
+      } else if (signUpAttempt.status === "missing_requirements") {
+        // Phone is verified, but Clerk needs more info or needs to finalize the sign-up
+        console.log("Phone verified, but missing requirements detected");
+        console.log("Missing fields:", signUpAttempt.missingFields);
 
-        // Navigate to profile setup
-        router.replace("/(auth)/profile-setup");
-      } else if (signUpAttempt.status === "complete") {
-        // Backup: if status is complete but no session ID yet, still proceed
-        console.log("Sign up complete, proceeding to profile setup");
-        router.replace("/(auth)/profile-setup");
+        // Check if username is one of the missing fields
+        if (signUpAttempt.missingFields?.includes("username")) {
+          console.log("Username is required, redirecting to username setup");
+          // Navigate to username setup screen
+          router.replace("/(auth)/username-setup");
+        } else {
+          // Try to update with an empty object to see if we can complete sign-up
+          try {
+            const updatedSignUp = await signUp.update({});
+
+            console.log("Updated sign up status:", updatedSignUp.status);
+            console.log("Updated session ID:", updatedSignUp.createdSessionId);
+
+            if (updatedSignUp.createdSessionId) {
+              await setActive({ session: updatedSignUp.createdSessionId });
+              console.log("Session activated after update!");
+              router.replace("/(auth)/profile-setup");
+            } else if (updatedSignUp.status === "complete") {
+              console.log(
+                "Sign-up marked complete, navigating to profile setup",
+              );
+              router.replace("/(auth)/profile-setup");
+            } else {
+              console.error(
+                "Still missing requirements:",
+                updatedSignUp.missingFields,
+              );
+              Alert.alert(
+                "Additional Information Required",
+                `Please provide: ${updatedSignUp.missingFields?.join(", ") || "additional information"}`,
+              );
+            }
+          } catch (updateError: any) {
+            console.error("Error updating sign-up:", updateError);
+            Alert.alert(
+              "Error",
+              updateError.errors?.[0]?.message || "Failed to complete sign-up",
+            );
+          }
+        }
       } else {
-        // No session ID available - this shouldn't happen with proper configuration
-        console.error("No session created. Status:", signUpAttempt.status);
+        // Handle other statuses
+        console.error("Unexpected sign-up status:", signUpAttempt.status);
         Alert.alert(
           "Verification Error",
-          "Unable to complete verification. Please try again or contact support.",
+          `Unexpected status: ${signUpAttempt.status}. Please try again.`,
         );
       }
     } catch (error: any) {

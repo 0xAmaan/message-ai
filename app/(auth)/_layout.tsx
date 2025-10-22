@@ -1,10 +1,15 @@
 import { useAuth } from "@clerk/clerk-expo";
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 
 export default function AuthRoutesLayout() {
   const { isSignedIn } = useAuth();
+  const segments = useSegments();
 
-  if (isSignedIn) {
+  // Allow profile-setup to be accessible even when signed in
+  // This is needed because the session is activated before profile setup
+  const isOnProfileSetup = segments[segments.length - 1] === "profile-setup";
+
+  if (isSignedIn && !isOnProfileSetup) {
     return <Redirect href={"/"} />;
   }
 
@@ -25,10 +30,19 @@ export default function AuthRoutesLayout() {
         }}
       />
       <Stack.Screen
+        name="username-setup"
+        options={{
+          title: "Choose Username",
+          headerShown: true,
+          headerBackVisible: false, // Prevent going back after OTP verification
+        }}
+      />
+      <Stack.Screen
         name="profile-setup"
         options={{
           title: "Complete Profile",
           headerShown: true,
+          headerBackVisible: false, // Prevent going back after username is set
         }}
       />
     </Stack>

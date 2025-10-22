@@ -63,18 +63,18 @@ export default function ProfileSetupScreen() {
       setLoading(true);
 
       // Wait for user to be loaded after session activation
-      if (!isLoaded) {
+      if (!isLoaded || !user) {
         console.log("Waiting for user to load...");
         Alert.alert("Please wait", "Loading your session...");
         return;
       }
 
-      // Get phone number from user object (session should be active now)
-      const phoneNumber = user?.primaryPhoneNumber?.phoneNumber || "";
-      const clerkId = user?.id || "";
+      // Get user data (session should be active now)
+      const phoneNumber = user.primaryPhoneNumber?.phoneNumber || "";
+      const clerkId = user.id;
 
-      if (!clerkId || !phoneNumber) {
-        console.error("Missing user data:", { clerkId, phoneNumber, user });
+      if (!clerkId) {
+        console.error("Missing user ID:", { clerkId, user });
         Alert.alert(
           "Error",
           "Session not properly established. Please try logging in again.",
@@ -87,20 +87,20 @@ export default function ProfileSetupScreen() {
         clerkId,
         phoneNumber,
         name: name.trim(),
+        hasProfileImage: !!profileImage,
       });
 
-      // Save user to Convex - this creates the user record
+      // Save user to Convex - this creates/updates the user record
       await upsertUser({
         clerkId,
-        phoneNumber,
+        phoneNumber: phoneNumber || "", // Phone might be empty if only username was used
         name: name.trim(),
         profilePicUrl: profileImage || undefined,
       });
 
-      console.log("Profile saved successfully!");
+      console.log("Profile saved successfully to Convex!");
 
-      // The auth layout will automatically redirect to home now that we're signed in
-      // No need to manually navigate - let the auth guard handle it
+      // Navigate to home - the auth layout will handle the redirect
       router.replace("/(home)");
     } catch (error: any) {
       console.error("Profile setup error:", error);
