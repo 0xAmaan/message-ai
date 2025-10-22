@@ -4,6 +4,7 @@ A real-time messaging application built with React Native (Expo), featuring dire
 
 ### MVP Testing Installation
 - Clone Repo — `git clone https://github.com/0xAmaan/message-ai.git`
+- `cd message-ai/`
 - Install Packages — `bun i`
 - Add keys I provided to .env
 - Open two separate terminals and run:
