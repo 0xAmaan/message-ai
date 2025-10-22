@@ -88,16 +88,18 @@ export default function ChatsScreen() {
 
   // List of conversations
   return (
-    <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
-      <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-        <View>
-          <Text className="text-sm text-gray-400">Welcome back,</Text>
-          <Text className="text-xl font-bold text-gray-50 mt-1">
-            {userIdentifier}
-          </Text>
+    <View className="flex-1 bg-gray-900">
+      <SafeAreaView edges={["top"]}>
+        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
+          <View>
+            <Text className="text-sm text-gray-400">Welcome back,</Text>
+            <Text className="text-xl font-bold text-gray-50 mt-1">
+              {userIdentifier}
+            </Text>
+          </View>
+          <SignOutButton />
         </View>
-        <SignOutButton />
-      </View>
+      </SafeAreaView>
 
       <FlatList
         data={conversations}
@@ -105,8 +107,9 @@ export default function ChatsScreen() {
           <ChatListItem conversation={item} currentUserId={user?.id || ""} />
         )}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
-        style={{ flex: 1, backgroundColor: "#111827" }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        className="flex-1"
+        style={{ backgroundColor: "#111827" }}
       />
 
       {/* Floating action button for new chat */}
@@ -116,6 +119,6 @@ export default function ChatsScreen() {
       >
         <Plus color="#F9FAFB" size={28} strokeWidth={2.5} />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -1,84 +1,88 @@
-import { useSignUp } from "@clerk/clerk-expo";
+import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function VerifyOTPScreen() {
-  const { signUp, setActive, isLoaded } = useSignUp();
+  const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
+  const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const router = useRouter();
-  const { phoneNumber } = useLocalSearchParams();
+  const params = useLocalSearchParams();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Handle params that might be arrays or undefined
+  const phoneNumber = typeof params.phoneNumber === 'string'
+    ? params.phoneNumber
+    : Array.isArray(params.phoneNumber)
+      ? params.phoneNumber[0]
+      : '';
+
+  const isSigningUp = typeof params.isSignUp === 'string'
+    ? params.isSignUp === "true"
+    : Array.isArray(params.isSignUp)
+      ? params.isSignUp[0] === "true"
+      : true; // Default to sign up if not specified
+
   const handleVerify = async () => {
-    if (!isLoaded || !signUp) return;
+    if (isSigningUp && (!signUpLoaded || !signUp)) return;
+    if (!isSigningUp && (!signInLoaded || !signIn)) return;
 
     try {
       setLoading(true);
 
-      // Attempt to verify the phone number with the provided code
+      // Handle Sign In
+      if (!isSigningUp && signIn) {
+        const signInAttempt = await signIn.attemptFirstFactor({
+          strategy: "phone_code",
+          code,
+        });
+
+        if (signInAttempt.status === "complete") {
+          await setActiveSignIn({ session: signInAttempt.createdSessionId! });
+          router.replace("/(tabs)");
+        } else {
+          Alert.alert("Error", "Sign in incomplete. Please try again.");
+        }
+        return;
+      }
+
+      // Handle Sign Up
+      if (!signUp) return;
       const signUpAttempt = await signUp.attemptPhoneNumberVerification({
         code,
       });
 
-      console.log("Sign up attempt status:", signUpAttempt.status);
-      console.log("Created session ID:", signUpAttempt.createdSessionId);
-      console.log("Missing fields:", signUpAttempt.missingFields);
-      console.log("Unverified fields:", signUpAttempt.unverifiedFields);
-
       // Handle different sign-up statuses
       if (signUpAttempt.status === "complete") {
-        // Sign-up is fully complete with a session
         if (signUpAttempt.createdSessionId) {
-          await setActive({ session: signUpAttempt.createdSessionId });
-          console.log("Session activated successfully!");
+          await setActiveSignUp({ session: signUpAttempt.createdSessionId });
           router.replace("/(auth)/profile-setup");
         } else {
-          console.error("Sign up complete but no session ID");
           Alert.alert(
             "Error",
             "Sign-up completed but session creation failed. Please try again.",
           );
         }
       } else if (signUpAttempt.status === "missing_requirements") {
-        // Phone is verified, but Clerk needs more info or needs to finalize the sign-up
-        console.log("Phone verified, but missing requirements detected");
-        console.log("Missing fields:", signUpAttempt.missingFields);
-
-        // Check if username is one of the missing fields
         if (signUpAttempt.missingFields?.includes("username")) {
-          console.log("Username is required, redirecting to username setup");
-          // Navigate to username setup screen
           router.replace("/(auth)/username-setup");
         } else {
-          // Try to update with an empty object to see if we can complete sign-up
           try {
             const updatedSignUp = await signUp.update({});
 
-            console.log("Updated sign up status:", updatedSignUp.status);
-            console.log("Updated session ID:", updatedSignUp.createdSessionId);
-
             if (updatedSignUp.createdSessionId) {
-              await setActive({ session: updatedSignUp.createdSessionId });
-              console.log("Session activated after update!");
+              await setActiveSignUp({ session: updatedSignUp.createdSessionId });
               router.replace("/(auth)/profile-setup");
             } else if (updatedSignUp.status === "complete") {
-              console.log(
-                "Sign-up marked complete, navigating to profile setup",
-              );
               router.replace("/(auth)/profile-setup");
             } else {
-              console.error(
-                "Still missing requirements:",
-                updatedSignUp.missingFields,
-              );
               Alert.alert(
                 "Additional Information Required",
                 `Please provide: ${updatedSignUp.missingFields?.join(", ") || "additional information"}`,
               );
             }
           } catch (updateError: any) {
-            console.error("Error updating sign-up:", updateError);
             Alert.alert(
               "Error",
               updateError.errors?.[0]?.message || "Failed to complete sign-up",
@@ -86,8 +90,6 @@ export default function VerifyOTPScreen() {
           }
         }
       } else {
-        // Handle other statuses
-        console.error("Unexpected sign-up status:", signUpAttempt.status);
         Alert.alert(
           "Verification Error",
           `Unexpected status: ${signUpAttempt.status}. Please try again.`,
@@ -105,10 +107,17 @@ export default function VerifyOTPScreen() {
   };
 
   const handleResend = async () => {
-    if (!isLoaded || !signUp) return;
-
     try {
-      await signUp.preparePhoneNumberVerification();
+      if (isSigningUp && signUp) {
+        await signUp.preparePhoneNumberVerification();
+      } else if (!isSigningUp && signIn) {
+        await signIn.prepareFirstFactor({
+          strategy: "phone_code",
+          phoneNumberId: signIn.supportedFirstFactors.find(
+            (f: any) => f.strategy === "phone_code",
+          )?.phoneNumberId,
+        });
+      }
       Alert.alert("Success", "A new code has been sent");
     } catch (error: any) {
       Alert.alert(
@@ -121,12 +130,17 @@ export default function VerifyOTPScreen() {
   return (
     <View className="flex-1 p-5 bg-gray-900">
       <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
-        Verify Your Phone
+        {isSigningUp ? "Verify Your Phone" : "Welcome Back"}
       </Text>
       <Text className="text-base text-gray-400 mb-10">
         Enter the 6-digit code sent to{"\n"}
         {phoneNumber}
       </Text>
+      {!isSigningUp && (
+        <Text className="text-sm text-violet-400 mb-5">
+          Signing you back in...
+        </Text>
+      )}
 
       <View className="mb-8">
         <Text className="text-base font-semibold mb-2 text-gray-50">

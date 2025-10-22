@@ -1,9 +1,13 @@
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { api } from "@/convex/_generated/api";
+import { registerForPushNotifications } from "@/lib/notifications";
+import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-import { ConvexReactClient } from "convex/react";
+import { ConvexReactClient, useMutation } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import * as Notifications from "expo-notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
@@ -15,8 +19,73 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 
 function RootLayoutNav() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
+  const updateOnlineStatus = useMutation(api.users.updateOnlineStatus);
+
+  // Update online status based on app state
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) return;
+
+    // Set initial online status
+    updateOnlineStatus({ clerkId: user.id, isOnline: true });
+
+    // Listen to app state changes
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        updateOnlineStatus({ clerkId: user.id, isOnline: true });
+      } else if (nextAppState === "background" || nextAppState === "inactive") {
+        updateOnlineStatus({ clerkId: user.id, isOnline: false });
+      }
+    });
+
+    // Cleanup: set offline when unmounting
+    return () => {
+      subscription.remove();
+      updateOnlineStatus({ clerkId: user.id, isOnline: false });
+    };
+  }, [isSignedIn, user?.id, updateOnlineStatus]);
+
+  // Set up push notifications
+  useEffect(() => {
+    if (isSignedIn) {
+      registerForPushNotifications();
+
+      // Listen for notifications received while app is in foreground
+      notificationListener.current =
+        Notifications.addNotificationReceivedListener((notification) => {
+          console.log("Notification received:", notification);
+        });
+
+      // Listen for notification interactions (user tapped notification)
+      responseListener.current =
+        Notifications.addNotificationResponseReceivedListener((response) => {
+          console.log("Notification response:", response);
+          // You can navigate to specific chat here based on notification data
+          const conversationId =
+            response.notification.request.content.data?.conversationId;
+          if (conversationId) {
+            router.push(`/chat/${conversationId}` as any);
+          }
+        });
+
+      return () => {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(
+            notificationListener.current,
+          );
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(
+            responseListener.current,
+          );
+        }
+      };
+    }
+  }, [isSignedIn, router]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -48,16 +117,10 @@ function RootLayoutNav() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: "#1F2937", // gray-800
-        },
-        headerTintColor: "#F9FAFB", // gray-50
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
-        contentStyle: {
-          backgroundColor: "#111827", // gray-900
-        },
+        headerStyle: { backgroundColor: "#1F2937" },
+        headerTintColor: "#F9FAFB",
+        headerTitleStyle: { fontWeight: "bold" },
+        contentStyle: { backgroundColor: "#111827" },
       }}
     >
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />

@@ -18,6 +18,7 @@ export default function NewChatScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   // Query to find user by phone number
   const searchedUser = useQuery(
@@ -42,20 +43,29 @@ export default function NewChatScreen() {
     }
   };
 
-  const handleSelectUser = async (selectedUserId: string) => {
-    if (!user?.id || selectedUserId === user.id) {
-      Alert.alert("Error", "Cannot start a chat with yourself");
+  const handleToggleUser = (userId: string) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
+
+  const handleCreateChat = async () => {
+    if (!user?.id) return;
+
+    if (selectedUsers.length === 0) {
+      Alert.alert("Error", "Please select at least one user");
       return;
     }
 
     try {
-      // Create or get existing conversation
+      const isGroup = selectedUsers.length > 1;
       const conversationId = await createOrGetConversation({
-        participants: [user.id, selectedUserId],
-        type: "direct",
+        participants: [user.id, ...selectedUsers],
+        type: isGroup ? "group" : "direct",
       });
 
-      // Navigate to the chat
       router.push(`/chat/${conversationId}` as any);
     } catch (error) {
       console.error("Failed to create conversation:", error);
@@ -74,7 +84,8 @@ export default function NewChatScreen() {
       {/* Search Input */}
       <View className="p-4 bg-gray-800 border-b border-gray-700">
         <TextInput
-          className="bg-gray-700 rounded-lg px-4 py-3 text-base text-gray-50"
+          className="bg-gray-700 rounded-lg px-4 py-3 text-base mb-2"
+          style={{ color: "#F9FAFB" }}
           placeholder="Search by phone number (+1234567890)"
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
@@ -83,7 +94,29 @@ export default function NewChatScreen() {
           autoCapitalize="none"
           autoCorrect={false}
         />
+        <Text className="text-xs" style={{ color: "#9CA3AF" }}>
+          Tip: Select multiple users to create a group chat
+        </Text>
       </View>
+
+      {/* Create Chat Button */}
+      {selectedUsers.length > 0 && (
+        <View className="p-4 bg-gray-800 border-b border-gray-700">
+          <TouchableOpacity
+            className="bg-violet-600 py-3 rounded-lg active:bg-violet-700"
+            onPress={handleCreateChat}
+          >
+            <Text
+              className="text-center font-semibold text-base"
+              style={{ color: "#F9FAFB" }}
+            >
+              {selectedUsers.length === 1
+                ? "Start Chat"
+                : `Create Group (${selectedUsers.length + 1} people)`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* User List */}
       {displayUsers === undefined ? (
@@ -93,10 +126,10 @@ export default function NewChatScreen() {
       ) : displayUsers.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
           <Text className="text-6xl mb-4">👥</Text>
-          <Text className="text-xl font-bold text-gray-50 mb-2">
+          <Text className="text-xl font-bold mb-2" style={{ color: "#F9FAFB" }}>
             {isSearching ? "No user found" : "No users available"}
           </Text>
-          <Text className="text-sm text-gray-400 text-center">
+          <Text className="text-sm text-center" style={{ color: "#9CA3AF" }}>
             {isSearching
               ? "Try searching with a different phone number"
               : "Users will appear here once they sign up"}
@@ -105,39 +138,62 @@ export default function NewChatScreen() {
       ) : (
         <FlatList
           data={displayUsers}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
-              onPress={() => handleSelectUser(item.clerkId)}
-              activeOpacity={0.7}
-            >
-              <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative">
-                <Text className="text-gray-50 text-xl font-semibold">
-                  {item.name.charAt(0).toUpperCase()}
-                </Text>
-                {item.isOnline && (
-                  <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
-                )}
-              </View>
+          renderItem={({ item }) => {
+            const isSelected = selectedUsers.includes(item.clerkId);
+            return (
+              <TouchableOpacity
+                className={`flex-row items-center p-4 border-b border-gray-700 active:bg-gray-700 ${
+                  isSelected ? "bg-violet-900" : "bg-gray-800"
+                }`}
+                onPress={() => handleToggleUser(item.clerkId)}
+                activeOpacity={0.7}
+              >
+                {/* Selection indicator */}
+                <View
+                  className={`w-6 h-6 rounded-full border-2 mr-3 justify-center items-center ${
+                    isSelected
+                      ? "bg-violet-600 border-violet-600"
+                      : "border-gray-600"
+                  }`}
+                >
+                  {isSelected && (
+                    <Text className="text-xs font-bold" style={{ color: "#F9FAFB" }}>
+                      ✓
+                    </Text>
+                  )}
+                </View>
 
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-gray-50 mb-1">
-                  {item.name}
-                </Text>
-                <Text className="text-sm text-gray-400">
-                  {item.phoneNumber}
-                </Text>
-              </View>
+                <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative">
+                  <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
+                  {item.isOnline && (
+                    <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
+                  )}
+                </View>
 
-              {item.isOnline && (
-                <View className="bg-emerald-500 px-2 py-1 rounded-xl">
-                  <Text className="text-gray-50 text-xs font-semibold">
-                    Online
+                <View className="flex-1">
+                  <Text
+                    className="text-base font-semibold mb-1"
+                    style={{ color: "#F9FAFB" }}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text className="text-sm" style={{ color: "#9CA3AF" }}>
+                    {item.phoneNumber}
                   </Text>
                 </View>
-              )}
-            </TouchableOpacity>
-          )}
+
+                {item.isOnline && (
+                  <View className="bg-emerald-500 px-2 py-1 rounded-xl">
+                    <Text className="text-xs font-semibold" style={{ color: "#F9FAFB" }}>
+                      Online
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          }}
           keyExtractor={(item) => item._id}
           contentContainerStyle={{ paddingVertical: 8 }}
         />
