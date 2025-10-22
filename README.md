@@ -10,6 +10,15 @@ A real-time messaging application built with React Native (Expo), featuring dire
 - Open two separate terminals and run:
   - `bun run convex-dev`
   - `bun start`
+- When signing up, you must use test phone numbers:
+  - +15555550104
+  - +15555550105
+  - +15555550106
+  - +15555550108
+  - +15555550109
+- Verification Code — 424242
+  - This is for all numbers
+
 
 ## Features
 
