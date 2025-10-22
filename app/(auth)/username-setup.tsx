@@ -4,15 +4,13 @@ import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { COLORS } from "../../lib/constants";
 
 export default function UsernameSetupScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
@@ -144,18 +142,22 @@ export default function UsernameSetupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Choose Your Username</Text>
-      <Text style={styles.subtitle}>
+    <View className="flex-1 p-5 bg-gray-900">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
+        Choose Your Username
+      </Text>
+      <Text className="text-base text-gray-400 mb-10">
         This will be your unique identifier in the app
       </Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Username</Text>
+      <View className="mb-8">
+        <Text className="text-base font-semibold mb-2 text-gray-50">
+          Username
+        </Text>
         <TextInput
-          style={styles.input}
+          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-base text-gray-50"
           placeholder="johndoe"
-          placeholderTextColor={COLORS.gray}
+          placeholderTextColor="#9CA3AF"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
@@ -163,77 +165,22 @@ export default function UsernameSetupScreen() {
           autoFocus
           maxLength={20}
         />
-        <Text style={styles.hint}>
+        <Text className="text-xs text-gray-400 mt-1.5">
           Must be 3-20 characters. Letters, numbers, and underscores only.
         </Text>
       </View>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`bg-violet-600 p-4 rounded-lg items-center ${loading || !username.trim() ? "opacity-60" : "active:bg-violet-700"}`}
         onPress={handleSubmit}
         disabled={loading || !username.trim()}
       >
         {loading ? (
-          <ActivityIndicator color={COLORS.white} />
+          <ActivityIndicator color="#F9FAFB" />
         ) : (
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text className="text-gray-50 text-base font-semibold">Continue</Text>
         )}
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 40,
-    marginBottom: 10,
-    color: COLORS.black,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: COLORS.black,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-  },
-  hint: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginTop: 6,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

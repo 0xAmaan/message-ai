@@ -1,6 +1,5 @@
 import { Id } from "@/convex/_generated/dataModel";
-import { StyleSheet, Text, View } from "react-native";
-import { COLORS } from "../lib/constants";
+import { Text, View } from "react-native";
 
 interface MessageBubbleProps {
   message: {
@@ -28,36 +27,26 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
 
   return (
     <View
-      style={[
-        styles.container,
-        isOwnMessage ? styles.ownMessage : styles.otherMessage,
-      ]}
+      className={`mb-2 flex-row ${isOwnMessage ? "justify-end" : "justify-start"}`}
     >
       <View
-        style={[
-          styles.bubble,
-          isOwnMessage ? styles.ownBubble : styles.otherBubble,
-        ]}
+        className={`max-w-[75%] px-3 py-2 rounded-lg ${
+          isOwnMessage
+            ? "bg-violet-600 rounded-br-sm"
+            : "bg-gray-700 rounded-bl-sm"
+        }`}
       >
-        <Text
-          style={[
-            styles.messageText,
-            isOwnMessage ? styles.ownMessageText : styles.otherMessageText,
-          ]}
-        >
+        <Text className="text-gray-50 text-base leading-5 mb-1">
           {message.content}
         </Text>
-        <View style={styles.metaContainer}>
+        <View className="flex-row items-center justify-end mt-0.5">
           <Text
-            style={[
-              styles.timeText,
-              isOwnMessage ? styles.ownTimeText : styles.otherTimeText,
-            ]}
+            className={`text-[11px] ${isOwnMessage ? "text-gray-200" : "text-gray-400"}`}
           >
             {formatTime(message.createdAt)}
           </Text>
           {isOwnMessage && (
-            <Text style={styles.checkmark}>
+            <Text className="text-xs ml-1 text-blue-400">
               {message.readBy.length > 1 ? "✓✓" : "✓"}
             </Text>
           )}
@@ -66,66 +55,3 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 8,
-    flexDirection: "row",
-  },
-  ownMessage: {
-    justifyContent: "flex-end",
-  },
-  otherMessage: {
-    justifyContent: "flex-start",
-  },
-  bubble: {
-    maxWidth: "75%",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    elevation: 1,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-  },
-  ownBubble: {
-    backgroundColor: "#DCF8C6", // WhatsApp green
-    borderBottomRightRadius: 2,
-  },
-  otherBubble: {
-    backgroundColor: COLORS.white,
-    borderBottomLeftRadius: 2,
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  ownMessageText: {
-    color: COLORS.black,
-  },
-  otherMessageText: {
-    color: COLORS.black,
-  },
-  metaContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginTop: 2,
-  },
-  timeText: {
-    fontSize: 11,
-  },
-  ownTimeText: {
-    color: "#667781",
-  },
-  otherTimeText: {
-    color: COLORS.gray,
-  },
-  checkmark: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: "#4FC3F7",
-  },
-});

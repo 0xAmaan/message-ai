@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import { COLORS } from "../lib/constants";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -17,12 +16,12 @@ export function MessageInput({ onSend }: MessageInputProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.inputContainer}>
+    <View className="flex-row p-2 bg-gray-800 border-t border-gray-700 items-end">
+      <View className="flex-1 bg-gray-700 rounded-3xl px-4 py-2 mr-2 min-h-[40px] max-h-[100px]">
         <TextInput
-          style={styles.input}
+          className="text-base text-gray-50 min-h-[24px]"
           placeholder="Message"
-          placeholderTextColor={COLORS.gray}
+          placeholderTextColor="#9CA3AF"
           value={message}
           onChangeText={setMessage}
           multiline
@@ -31,74 +30,16 @@ export function MessageInput({ onSend }: MessageInputProps) {
       </View>
 
       <TouchableOpacity
-        style={[
-          styles.sendButton,
-          !message.trim() && styles.sendButtonDisabled,
-        ]}
+        className={`w-10 h-10 rounded-full justify-center items-center ${
+          message.trim()
+            ? "bg-violet-600 active:bg-violet-700"
+            : "bg-gray-600 opacity-50"
+        }`}
         onPress={handleSend}
         disabled={!message.trim()}
       >
-        <View style={styles.sendIcon}>
-          <View style={styles.sendArrow} />
-        </View>
+        <Text className="text-gray-50 text-xl font-bold">↑</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    padding: 8,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
-    alignItems: "flex-end",
-  },
-  inputContainer: {
-    flex: 1,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    minHeight: 40,
-    maxHeight: 100,
-  },
-  input: {
-    fontSize: 16,
-    color: COLORS.black,
-    minHeight: 24,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: COLORS.gray,
-    opacity: 0.5,
-  },
-  sendIcon: {
-    width: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendArrow: {
-    width: 0,
-    height: 0,
-    backgroundColor: "transparent",
-    borderStyle: "solid",
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 12,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: COLORS.white,
-    transform: [{ rotate: "45deg" }],
-  },
-});

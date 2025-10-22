@@ -2,9 +2,10 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
 // Initialize Convex client
@@ -44,7 +45,41 @@ function RootLayoutNav() {
     }
   }, [isSignedIn, isLoaded, segments, router]);
 
-  return <Slot />;
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: "#1F2937", // gray-800
+        },
+        headerTintColor: "#F9FAFB", // gray-50
+        headerTitleStyle: {
+          fontWeight: "bold",
+        },
+        contentStyle: {
+          backgroundColor: "#111827", // gray-900
+        },
+      }}
+    >
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="chat/[id]"
+        options={{
+          headerShown: true,
+          title: "Chat",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="new-chat"
+        options={{
+          headerShown: true,
+          title: "New Chat",
+          headerBackTitle: "Back",
+        }}
+      />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
@@ -63,10 +98,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <RootLayoutNav />
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <SafeAreaProvider>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <RootLayoutNav />
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

@@ -1,15 +1,7 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { COLORS } from "../../lib/constants";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function PhoneInputScreen() {
   const { signUp, isLoaded } = useSignUp();
@@ -50,89 +42,41 @@ export default function PhoneInputScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to MessageAI</Text>
-      <Text style={styles.subtitle}>
+    <View className="flex-1 p-5 bg-gray-900">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
+        Welcome to MessageAI
+      </Text>
+      <Text className="text-base text-gray-400 mb-10">
         Enter your phone number to get started
       </Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Phone Number</Text>
+      <View className="mb-8">
+        <Text className="text-base font-semibold mb-2 text-gray-50">
+          Phone Number
+        </Text>
         <TextInput
-          style={styles.input}
+          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-base text-gray-50"
           placeholder="+1234567890"
+          placeholderTextColor="#9CA3AF"
           keyboardType="phone-pad"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           autoFocus
         />
-        <Text style={styles.hint}>Include country code (e.g., +1 for US)</Text>
+        <Text className="text-xs text-gray-400 mt-1.5">
+          Include country code (e.g., +1 for US)
+        </Text>
       </View>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`bg-violet-600 p-4 rounded-lg items-center ${loading || !phoneNumber ? "opacity-60" : "active:bg-violet-700"}`}
         onPress={handleSubmit}
         disabled={loading || !phoneNumber}
       >
-        <Text style={styles.buttonText}>
+        <Text className="text-gray-50 text-base font-semibold">
           {loading ? "Sending..." : "Send Code"}
         </Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 40,
-    marginBottom: 10,
-    color: COLORS.black,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: COLORS.black,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-  },
-  hint: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginTop: 6,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

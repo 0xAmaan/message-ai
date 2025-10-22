@@ -1,5 +1,4 @@
 import { api } from "@/convex/_generated/api";
-import { COLORS } from "@/lib/constants";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation } from "convex/react";
 import * as ImagePicker from "expo-image-picker";
@@ -9,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -100,8 +98,8 @@ export default function ProfileSetupScreen() {
 
       console.log("Profile saved successfully to Convex!");
 
-      // Navigate to home - the auth layout will handle the redirect
-      router.replace("/(home)");
+      // Navigate to tabs - the main chat screen
+      router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Profile setup error:", error);
       Alert.alert("Error", error.message || "Failed to save profile");
@@ -111,147 +109,64 @@ export default function ProfileSetupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Complete Your Profile</Text>
-      <Text style={styles.subtitle}>Help others recognize you</Text>
+    <View className="flex-1 p-5 bg-gray-900 items-center">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
+        Complete Your Profile
+      </Text>
+      <Text className="text-base text-gray-400 mb-10">
+        Help others recognize you
+      </Text>
 
-      <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+      <TouchableOpacity onPress={pickImage} className="mb-10">
         {profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          <Image
+            source={{ uri: profileImage }}
+            className="w-30 h-30 rounded-full"
+          />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.imagePlaceholderText}>📷</Text>
-            <Text style={styles.imagePlaceholderSubtext}>Add Photo</Text>
+          <View className="w-30 h-30 rounded-full bg-gray-700 justify-center items-center border-2 border-dashed border-gray-500">
+            <Text className="text-4xl mb-1">📷</Text>
+            <Text className="text-sm text-gray-400">Add Photo</Text>
           </View>
         )}
       </TouchableOpacity>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Your Name</Text>
+      <View className="w-full mb-8">
+        <Text className="text-base font-semibold mb-2 text-gray-50">
+          Your Name
+        </Text>
         <TextInput
-          style={styles.input}
+          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-base text-gray-50"
           placeholder="Enter your name"
-          placeholderTextColor={COLORS.gray}
+          placeholderTextColor="#9CA3AF"
           value={name}
           onChangeText={setName}
           autoFocus
           maxLength={50}
         />
-        <Text style={styles.hint}>
+        <Text className="text-xs text-gray-400 mt-1.5">
           This name will be visible to your contacts
         </Text>
       </View>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`bg-violet-600 p-4 rounded-lg items-center w-full ${loading || !name.trim() ? "opacity-60" : "active:bg-violet-700"}`}
         onPress={handleSubmit}
         disabled={loading || !name.trim()}
       >
         {loading ? (
-          <ActivityIndicator color={COLORS.white} />
+          <ActivityIndicator color="#F9FAFB" />
         ) : (
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text className="text-gray-50 text-base font-semibold">Continue</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => router.replace("/(home)")}
-        style={styles.skipButton}
+        onPress={() => router.replace("/(tabs)")}
+        className="mt-5"
       >
-        <Text style={styles.skipText}>Skip for now</Text>
+        <Text className="text-gray-400 text-sm">Skip for now</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: COLORS.white,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 40,
-    marginBottom: 10,
-    color: COLORS.black,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 40,
-  },
-  imageContainer: {
-    marginBottom: 40,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  imagePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.lightGray,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.gray,
-    borderStyle: "dashed",
-  },
-  imagePlaceholderText: {
-    fontSize: 40,
-    marginBottom: 5,
-  },
-  imagePlaceholderSubtext: {
-    fontSize: 14,
-    color: COLORS.gray,
-  },
-  inputContainer: {
-    width: "100%",
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: COLORS.black,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-  },
-  hint: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginTop: 6,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    width: "100%",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  skipButton: {
-    marginTop: 20,
-  },
-  skipText: {
-    color: COLORS.gray,
-    fontSize: 14,
-  },
-});

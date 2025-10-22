@@ -1,15 +1,7 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { COLORS } from "../../lib/constants";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function VerifyOTPScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
@@ -127,18 +119,23 @@ export default function VerifyOTPScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Verify Your Phone</Text>
-      <Text style={styles.subtitle}>
+    <View className="flex-1 p-5 bg-gray-900">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
+        Verify Your Phone
+      </Text>
+      <Text className="text-base text-gray-400 mb-10">
         Enter the 6-digit code sent to{"\n"}
         {phoneNumber}
       </Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Verification Code</Text>
+      <View className="mb-8">
+        <Text className="text-base font-semibold mb-2 text-gray-50">
+          Verification Code
+        </Text>
         <TextInput
-          style={styles.input}
+          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-2xl text-center tracking-widest text-gray-50"
           placeholder="000000"
+          placeholderTextColor="#9CA3AF"
           keyboardType="number-pad"
           value={code}
           onChangeText={setCode}
@@ -148,78 +145,20 @@ export default function VerifyOTPScreen() {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`bg-violet-600 p-4 rounded-lg items-center mb-5 ${loading || code.length !== 6 ? "opacity-60" : "active:bg-violet-700"}`}
         onPress={handleVerify}
         disabled={loading || code.length !== 6}
       >
-        <Text style={styles.buttonText}>
+        <Text className="text-gray-50 text-base font-semibold">
           {loading ? "Verifying..." : "Verify"}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleResend} style={styles.resendButton}>
-        <Text style={styles.resendText}>Didn&apos;t receive code? Resend</Text>
+      <TouchableOpacity onPress={handleResend} className="items-center">
+        <Text className="text-violet-400 text-sm">
+          Didn&apos;t receive code? Resend
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 40,
-    marginBottom: 10,
-    color: COLORS.black,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: COLORS.black,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 24,
-    textAlign: "center",
-    letterSpacing: 10,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resendButton: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  resendText: {
-    color: COLORS.primary,
-    fontSize: 14,
-  },
-});

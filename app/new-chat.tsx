@@ -7,13 +7,11 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { COLORS } from "../lib/constants";
 
 export default function NewChatScreen() {
   const { user } = useUser();
@@ -72,13 +70,13 @@ export default function NewChatScreen() {
     : allUsers?.filter((u) => u.clerkId !== user?.id) || [];
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-900">
       {/* Search Input */}
-      <View style={styles.searchContainer}>
+      <View className="p-4 bg-gray-800 border-b border-gray-700">
         <TextInput
-          style={styles.searchInput}
+          className="bg-gray-700 rounded-lg px-4 py-3 text-base text-gray-50"
           placeholder="Search by phone number (+1234567890)"
-          placeholderTextColor={COLORS.gray}
+          placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={handleSearch}
           keyboardType="phone-pad"
@@ -89,16 +87,16 @@ export default function NewChatScreen() {
 
       {/* User List */}
       {displayUsers === undefined ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#8B5CF6" />
         </View>
       ) : displayUsers.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>👥</Text>
-          <Text style={styles.emptyStateTitle}>
+        <View className="flex-1 justify-center items-center px-10">
+          <Text className="text-6xl mb-4">👥</Text>
+          <Text className="text-xl font-bold text-gray-50 mb-2">
             {isSearching ? "No user found" : "No users available"}
           </Text>
-          <Text style={styles.emptyStateSubtitle}>
+          <Text className="text-sm text-gray-400 text-center">
             {isSearching
               ? "Try searching with a different phone number"
               : "Users will appear here once they sign up"}
@@ -109,141 +107,41 @@ export default function NewChatScreen() {
           data={displayUsers}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.userItem}
+              className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
               onPress={() => handleSelectUser(item.clerkId)}
               activeOpacity={0.7}
             >
-              <View style={styles.userAvatar}>
-                <Text style={styles.userAvatarText}>
+              <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative">
+                <Text className="text-gray-50 text-xl font-semibold">
                   {item.name.charAt(0).toUpperCase()}
                 </Text>
-                {item.isOnline && <View style={styles.onlineDot} />}
+                {item.isOnline && (
+                  <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
+                )}
               </View>
 
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.name}</Text>
-                <Text style={styles.userPhone}>{item.phoneNumber}</Text>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-gray-50 mb-1">
+                  {item.name}
+                </Text>
+                <Text className="text-sm text-gray-400">
+                  {item.phoneNumber}
+                </Text>
               </View>
 
               {item.isOnline && (
-                <View style={styles.onlineBadge}>
-                  <Text style={styles.onlineBadgeText}>Online</Text>
+                <View className="bg-emerald-500 px-2 py-1 rounded-xl">
+                  <Text className="text-gray-50 text-xs font-semibold">
+                    Online
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingVertical: 8 }}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  searchContainer: {
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  searchInput: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: COLORS.black,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.black,
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: COLORS.gray,
-    textAlign: "center",
-  },
-  listContent: {
-    paddingVertical: 8,
-  },
-  userItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  userAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    position: "relative",
-  },
-  userAvatarText: {
-    color: COLORS.white,
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  onlineDot: {
-    position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#4ade80",
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.black,
-    marginBottom: 4,
-  },
-  userPhone: {
-    fontSize: 14,
-    color: COLORS.gray,
-  },
-  onlineBadge: {
-    backgroundColor: "#4ade80",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  onlineBadgeText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});

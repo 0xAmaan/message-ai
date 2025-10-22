@@ -5,7 +5,20 @@ export default function AuthRoutesLayout() {
   // This allows the auth flow to complete without interference
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: "#1F2937", // gray-800
+        },
+        headerTintColor: "#F9FAFB", // gray-50
+        headerTitleStyle: {
+          fontWeight: "bold",
+        },
+        contentStyle: {
+          backgroundColor: "#111827", // gray-900
+        },
+      }}
+    >
       <Stack.Screen
         name="phone-input"
         options={{

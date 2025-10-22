@@ -2,8 +2,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { COLORS } from "../lib/constants";
+import { Text, TouchableOpacity, View } from "react-native";
 
 interface ChatListItemProps {
   conversation: {
@@ -84,12 +83,14 @@ export function ChatListItem({
 
   if (!participants) {
     return (
-      <View style={styles.container}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>...</Text>
+      <View className="flex-row p-4 bg-gray-800 border-b border-gray-700">
+        <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3">
+          <Text className="text-gray-50 text-xl font-semibold">...</Text>
         </View>
-        <View style={styles.content}>
-          <Text style={styles.name}>Loading...</Text>
+        <View className="flex-1 justify-center">
+          <Text className="text-gray-50 text-base font-semibold">
+            Loading...
+          </Text>
         </View>
       </View>
     );
@@ -97,30 +98,37 @@ export function ChatListItem({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      className="flex-row p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
       onPress={handlePress}
       activeOpacity={0.7}
     >
       {/* Avatar */}
-      <View style={[styles.avatar, otherUser?.isOnline && styles.avatarOnline]}>
-        <Text style={styles.avatarText}>
+      <View
+        className={`w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
+      >
+        <Text className="text-gray-50 text-xl font-semibold">
           {displayName.charAt(0).toUpperCase()}
         </Text>
-        {otherUser?.isOnline && <View style={styles.onlineDot} />}
+        {otherUser?.isOnline && (
+          <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
+        )}
       </View>
 
       {/* Chat info */}
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
+      <View className="flex-1 justify-center">
+        <View className="flex-row justify-between items-center mb-1">
+          <Text
+            className="text-gray-50 text-base font-semibold flex-1"
+            numberOfLines={1}
+          >
             {displayName}
           </Text>
-          <Text style={styles.time}>
+          <Text className="text-gray-400 text-xs ml-2">
             {formatTime(conversation.lastMessageAt)}
           </Text>
         </View>
 
-        <Text style={styles.lastMessage} numberOfLines={2}>
+        <Text className="text-gray-400 text-sm" numberOfLines={2}>
           {lastMessage?.senderId === currentUserId && "You: "}
           {lastMessageText}
         </Text>
@@ -128,68 +136,3 @@ export function ChatListItem({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    position: "relative",
-  },
-  avatarOnline: {
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  onlineDot: {
-    position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#4ade80",
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.black,
-    flex: 1,
-  },
-  time: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginLeft: 8,
-  },
-  lastMessage: {
-    fontSize: 14,
-    color: COLORS.gray,
-  },
-});

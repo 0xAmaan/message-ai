@@ -3,16 +3,16 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import {
   ActivityIndicator,
   FlatList,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ChatListItem } from "../../components/ChatListItem";
-import { COLORS } from "../../lib/constants";
 
 export default function ChatsScreen() {
   const { user } = useUser();
@@ -33,58 +33,68 @@ export default function ChatsScreen() {
   // Loading state
   if (conversations === undefined) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
+        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
           <View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.username}>{userIdentifier}</Text>
+            <Text className="text-sm text-gray-400">Welcome back,</Text>
+            <Text className="text-xl font-bold text-gray-50 mt-1">
+              {userIdentifier}
+            </Text>
           </View>
           <SignOutButton />
         </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+        <View className="flex-1 justify-center items-center bg-gray-900">
+          <ActivityIndicator size="large" color="#8B5CF6" />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // Empty state
   if (conversations.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
+        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
           <View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.username}>{userIdentifier}</Text>
+            <Text className="text-sm text-gray-400">Welcome back,</Text>
+            <Text className="text-xl font-bold text-gray-50 mt-1">
+              {userIdentifier}
+            </Text>
           </View>
           <SignOutButton />
         </View>
 
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>💬</Text>
-          <Text style={styles.emptyStateTitle}>No chats yet</Text>
-          <Text style={styles.emptyStateSubtitle}>
+        <View className="flex-1 justify-center items-center px-10 bg-gray-900">
+          <Text className="text-6xl mb-4">💬</Text>
+          <Text className="text-xl font-bold text-gray-50 mb-2">
+            No chats yet
+          </Text>
+          <Text className="text-sm text-gray-400 text-center mb-8">
             Start a conversation by tapping the button below
           </Text>
 
           <TouchableOpacity
-            style={styles.newChatButton}
+            className="bg-violet-600 px-8 py-4 rounded-full active:bg-violet-700"
             onPress={() => router.push("/new-chat")}
           >
-            <Text style={styles.newChatButtonText}>+ New Chat</Text>
+            <Text className="text-gray-50 text-base font-semibold">
+              + New Chat
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // List of conversations
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView className="flex-1 bg-gray-900" edges={["top", "bottom"]}>
+      <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
         <View>
-          <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.username}>{userIdentifier}</Text>
+          <Text className="text-sm text-gray-400">Welcome back,</Text>
+          <Text className="text-xl font-bold text-gray-50 mt-1">
+            {userIdentifier}
+          </Text>
         </View>
         <SignOutButton />
       </View>
@@ -95,109 +105,17 @@ export default function ChatsScreen() {
           <ChatListItem conversation={item} currentUserId={user?.id || ""} />
         )}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+        style={{ flex: 1, backgroundColor: "#111827" }}
       />
 
       {/* Floating action button for new chat */}
       <TouchableOpacity
-        style={styles.fab}
+        className="absolute right-5 bottom-20 w-14 h-14 rounded-full bg-violet-600 justify-center items-center active:bg-violet-700 shadow-lg"
         onPress={() => router.push("/new-chat")}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Plus color="#F9FAFB" size={28} strokeWidth={2.5} />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  greeting: {
-    fontSize: 14,
-    color: COLORS.gray,
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.black,
-    marginTop: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.black,
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: COLORS.gray,
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  newChatButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 25,
-    elevation: 3,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  newChatButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  listContent: {
-    paddingBottom: 80, // Space for FAB
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  fabText: {
-    color: COLORS.white,
-    fontSize: 28,
-    fontWeight: "300",
-  },
-});

@@ -1,6 +1,7 @@
 import { useClerk } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
-import { Text, TouchableOpacity } from "react-native";
+import { LogOut } from "lucide-react-native";
+import { TouchableOpacity } from "react-native";
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function
@@ -17,8 +18,12 @@ export const SignOutButton = () => {
     }
   };
   return (
-    <TouchableOpacity onPress={handleSignOut}>
-      <Text>Sign out</Text>
+    <TouchableOpacity
+      onPress={handleSignOut}
+      className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center active:bg-violet-600"
+      activeOpacity={0.7}
+    >
+      <LogOut color="#F9FAFB" size={20} strokeWidth={2} />
     </TouchableOpacity>
   );
 };
