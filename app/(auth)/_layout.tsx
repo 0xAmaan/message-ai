@@ -1,17 +1,8 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { Redirect, Stack, useSegments } from "expo-router";
+import { Stack } from "expo-router";
 
 export default function AuthRoutesLayout() {
-  const { isSignedIn } = useAuth();
-  const segments = useSegments();
-
-  // Allow profile-setup to be accessible even when signed in
-  // This is needed because the session is activated before profile setup
-  const isOnProfileSetup = segments[segments.length - 1] === "profile-setup";
-
-  if (isSignedIn && !isOnProfileSetup) {
-    return <Redirect href={"/"} />;
-  }
+  // No redirect logic here - the root layout handles all routing
+  // This allows the auth flow to complete without interference
 
   return (
     <Stack>

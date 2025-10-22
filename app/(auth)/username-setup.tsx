@@ -91,9 +91,8 @@ export default function UsernameSetupScreen() {
             }
           }
 
-          // Navigate to profile setup for name and photo
-          // Use replace and navigate to home, which will be the default after sign-in
-          router.replace("/(home)");
+          // Navigate to tabs - the root layout will handle the redirect
+          router.replace("/(tabs)");
         } else {
           Alert.alert("Error", "Sign-up completed but session creation failed");
         }
