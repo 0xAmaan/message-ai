@@ -2,6 +2,14 @@
 
 A real-time messaging application built with React Native (Expo), featuring direct messaging, group chats, typing indicators, read receipts, and image sharing.
 
+### MVP Testing Installation
+- Clone Repo — `git clone https://github.com/0xAmaan/message-ai.git`
+- Install Packages — `bun i`
+- Add keys I provided to .env
+- Open two separate terminals and run:
+  - `bun run convex-dev`
+  - `bun start`
+
 ## Features
 
 ### Core Messaging
