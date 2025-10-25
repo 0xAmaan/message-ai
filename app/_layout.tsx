@@ -74,15 +74,11 @@ function RootLayoutNav() {
 
       return () => {
         try {
-          if (notificationListener.current && Notifications.removeNotificationSubscription) {
-            Notifications.removeNotificationSubscription(
-              notificationListener.current,
-            );
+          if (notificationListener.current) {
+            notificationListener.current.remove();
           }
-          if (responseListener.current && Notifications.removeNotificationSubscription) {
-            Notifications.removeNotificationSubscription(
-              responseListener.current,
-            );
+          if (responseListener.current) {
+            responseListener.current.remove();
           }
         } catch (error) {
           console.log("Error cleaning up notifications:", error);

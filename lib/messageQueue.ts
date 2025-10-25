@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const MESSAGE_QUEUE_KEY = '@message_queue';
+const MESSAGE_QUEUE_KEY = "@message_queue";
 const MAX_QUEUE_SIZE = 100;
 
 export interface QueuedMessage {
@@ -14,10 +14,12 @@ export interface QueuedMessage {
 
 export class MessageQueue {
   // Add message to queue
-  static async enqueue(message: Omit<QueuedMessage, 'id' | 'timestamp' | 'attempts'>): Promise<void> {
+  static async enqueue(
+    message: Omit<QueuedMessage, "id" | "timestamp" | "attempts">,
+  ): Promise<void> {
     try {
       const queue = await this.getQueue();
-      
+
       const queuedMessage: QueuedMessage = {
         ...message,
         id: `${Date.now()}_${Math.random()}`,
@@ -35,7 +37,7 @@ export class MessageQueue {
 
       await AsyncStorage.setItem(MESSAGE_QUEUE_KEY, JSON.stringify(queue));
     } catch (error) {
-      console.error('Error enqueueing message:', error);
+      console.error("Error enqueueing message:", error);
     }
   }
 
@@ -45,7 +47,7 @@ export class MessageQueue {
       const queueJson = await AsyncStorage.getItem(MESSAGE_QUEUE_KEY);
       return queueJson ? JSON.parse(queueJson) : [];
     } catch (error) {
-      console.error('Error getting queue:', error);
+      console.error("Error getting queue:", error);
       return [];
     }
   }
@@ -54,10 +56,10 @@ export class MessageQueue {
   static async dequeue(messageId: string): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const filtered = queue.filter(msg => msg.id !== messageId);
+      const filtered = queue.filter((msg) => msg.id !== messageId);
       await AsyncStorage.setItem(MESSAGE_QUEUE_KEY, JSON.stringify(filtered));
     } catch (error) {
-      console.error('Error dequeueing message:', error);
+      console.error("Error dequeueing message:", error);
     }
   }
 
@@ -65,14 +67,12 @@ export class MessageQueue {
   static async incrementAttempts(messageId: string): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const updated = queue.map(msg => 
-        msg.id === messageId 
-          ? { ...msg, attempts: msg.attempts + 1 }
-          : msg
+      const updated = queue.map((msg) =>
+        msg.id === messageId ? { ...msg, attempts: msg.attempts + 1 } : msg,
       );
       await AsyncStorage.setItem(MESSAGE_QUEUE_KEY, JSON.stringify(updated));
     } catch (error) {
-      console.error('Error incrementing attempts:', error);
+      console.error("Error incrementing attempts:", error);
     }
   }
 
@@ -81,7 +81,7 @@ export class MessageQueue {
     try {
       await AsyncStorage.removeItem(MESSAGE_QUEUE_KEY);
     } catch (error) {
-      console.error('Error clearing queue:', error);
+      console.error("Error clearing queue:", error);
     }
   }
 

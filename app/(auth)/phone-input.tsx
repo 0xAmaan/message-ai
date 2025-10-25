@@ -96,7 +96,7 @@ export default function PhoneInputScreen() {
       {isSigningIn && (
         <View className="bg-violet-900 p-3 rounded-lg mb-5">
           <Text className="text-sm text-violet-200">
-            📱 This number is already registered. We'll send you a code to sign
+            📱 This number is already registered. We&apos;ll send you a code to sign
             in.
           </Text>
         </View>

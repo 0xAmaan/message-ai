@@ -44,4 +44,12 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_user_conversation", ["userId", "conversationId"]),
+
+  // Smart replies (AI-generated suggestions)
+  smartReplies: defineTable({
+    conversationId: v.id("conversations"),
+    lastMessageId: v.id("messages"), // Which message triggered this
+    suggestions: v.array(v.string()), // Array of 3 reply options
+    generatedAt: v.number(),
+  }).index("by_conversation_message", ["conversationId", "lastMessageId"]),
 });
