@@ -222,7 +222,41 @@ export const translateMessage = action({
         throw new Error("Unexpected response type from Claude");
       }
 
-      const result = JSON.parse(content.text);
+      // Extract JSON from the response (handle markdown code blocks and extra text)
+      let jsonText = content.text.trim();
+
+      // Remove markdown code blocks if present
+      if (jsonText.startsWith("```")) {
+        const jsonMatch = jsonText.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[1].trim();
+        }
+      }
+
+      // Extract only the JSON object (remove any text after the closing brace)
+      // Find the first { and the matching closing }
+      const firstBrace = jsonText.indexOf("{");
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let endIndex = firstBrace;
+
+        for (let i = firstBrace; i < jsonText.length; i++) {
+          if (jsonText[i] === "{") braceCount++;
+          if (jsonText[i] === "}") braceCount--;
+
+          if (braceCount === 0) {
+            endIndex = i + 1;
+            break;
+          }
+        }
+
+        jsonText = jsonText.substring(firstBrace, endIndex);
+      }
+
+      console.log("Raw Claude response:", content.text);
+      console.log("Extracted JSON text:", jsonText);
+
+      const result = JSON.parse(jsonText);
 
       if (
         !result.translation ||

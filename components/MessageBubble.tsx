@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { TranslateButton } from "./TranslateButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface MessageBubbleProps {
   message: {
@@ -30,6 +30,12 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showTranslation, setShowTranslation] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [localTranslation, setLocalTranslation] = useState<{
+    translation: string;
+    detectedLanguage: string;
+    culturalHints: string[];
+    slangExplanations: { term: string; explanation: string }[];
+  } | null>(null);
 
   // Get image URL if message has an image
   const imageUrl = useQuery(
@@ -51,6 +57,18 @@ export function MessageBubble({
   // Translation action
   const translateMessage = useAction(api.translations.translateMessage);
 
+  // Auto-show translation when cache updates after translating
+  useEffect(() => {
+    console.log("useEffect - cachedTranslation:", cachedTranslation);
+    console.log("useEffect - isTranslating:", isTranslating);
+
+    if (cachedTranslation && isTranslating) {
+      console.log("Translation cache updated, showing translation");
+      setShowTranslation(true);
+      setIsTranslating(false);
+    }
+  }, [cachedTranslation, isTranslating]);
+
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", {
@@ -70,9 +88,10 @@ export function MessageBubble({
     console.log("Message ID:", message._id);
     console.log("Current User ID:", currentUserId);
     console.log("Cached translation:", cachedTranslation);
+    console.log("Local translation:", localTranslation);
 
-    // Toggle if already translated
-    if (cachedTranslation) {
+    // Toggle if already translated (either cached or local)
+    if (cachedTranslation || localTranslation) {
       console.log("Toggle translation visibility");
       setShowTranslation(!showTranslation);
       return;
@@ -105,16 +124,21 @@ export function MessageBubble({
       console.log("Translation result:", result);
 
       if (result) {
+        // Store the translation locally and show it immediately
+        setLocalTranslation(result);
         setShowTranslation(true);
+        setIsTranslating(false);
+      } else {
+        // If no result, stop loading
+        setIsTranslating(false);
       }
     } catch (error) {
       console.error("Translation error:", error);
+      setIsTranslating(false);
       Alert.alert(
         "Translation Failed",
         error instanceof Error ? error.message : "Failed to translate message",
       );
-    } finally {
-      setIsTranslating(false);
     }
   };
 
@@ -140,12 +164,13 @@ export function MessageBubble({
   };
 
   // Only show translate button for other users' messages with text content
-  // AND only for saved messages (not optimistic/pending messages with string IDs)
+  // AND only for saved messages (not optimistic/pending messages)
+  const isOptimisticMessage = typeof message._id === "string" && message._id.startsWith("temp-");
   const showTranslateButton =
     !isOwnMessage &&
     currentUserId &&
     message.content.trim().length > 0 &&
-    typeof message._id !== "string"; // Only show for DB-saved messages
+    !isOptimisticMessage; // Only show for DB-saved messages
 
   return (
     <View
@@ -212,74 +237,92 @@ export function MessageBubble({
         </View>
 
         {/* Translation Overlay */}
-        {showTranslation && cachedTranslation && (
-          <View
-            className="mt-2 px-3 py-3 rounded-lg"
-            style={{ backgroundColor: "#2D1B4E" }}
-          >
-            {/* Language indicator */}
-            <View className="flex-row items-center mb-2">
-              <Text className="text-xs" style={{ color: "#C4B5FD" }}>
-                {getFlagEmoji(cachedTranslation.detectedSourceLanguage)}{" "}
-                {cachedTranslation.detectedSourceLanguage} → 🇺🇸 English
-              </Text>
-            </View>
+        {showTranslation && (cachedTranslation || localTranslation) && (() => {
+          // Use cachedTranslation if available, otherwise use localTranslation
+          const translation = cachedTranslation || localTranslation;
+          if (!translation) return null;
 
-            {/* Divider */}
+          const translatedText = cachedTranslation
+            ? cachedTranslation.translatedText
+            : localTranslation!.translation;
+          const detectedLang = cachedTranslation
+            ? cachedTranslation.detectedSourceLanguage
+            : localTranslation!.detectedLanguage;
+          const culturalHints = cachedTranslation
+            ? cachedTranslation.culturalHints
+            : localTranslation!.culturalHints;
+          const slangExplanations = cachedTranslation
+            ? cachedTranslation.slangExplanations
+            : localTranslation!.slangExplanations;
+
+          return (
             <View
-              className="h-px mb-2"
-              style={{ backgroundColor: "#4C1D95" }}
-            />
-
-            {/* Translated text */}
-            <Text className="text-base leading-5 mb-2" style={{ color: "#F9FAFB" }}>
-              {cachedTranslation.translatedText}
-            </Text>
-
-            {/* Cultural hints */}
-            {cachedTranslation.culturalHints.length > 0 && (
-              <View className="mt-2">
-                <Text
-                  className="text-xs font-semibold mb-1"
-                  style={{ color: "#93C5FD" }}
-                >
-                  ℹ️ Cultural Context:
+              className="mt-2 px-4 py-3 rounded-lg"
+              style={{ backgroundColor: "#2D1B4E" }}
+            >
+              {/* Language indicator */}
+              <View className="flex-row items-center mb-3">
+                <Text className="text-xs font-medium" style={{ color: "#C4B5FD" }}>
+                  {getFlagEmoji(detectedLang)} {detectedLang} → 🇺🇸 English
                 </Text>
-                {cachedTranslation.culturalHints.map((hint, index) => (
-                  <Text
-                    key={index}
-                    className="text-xs leading-4 mb-1"
-                    style={{ color: "#E0E7FF" }}
-                  >
-                    • {hint}
-                  </Text>
-                ))}
               </View>
-            )}
 
-            {/* Slang explanations */}
-            {cachedTranslation.slangExplanations.length > 0 && (
-              <View className="mt-2">
-                <Text
-                  className="text-xs font-semibold mb-1"
-                  style={{ color: "#FCD34D" }}
-                >
-                  📚 Slang & Idioms:
-                </Text>
-                {cachedTranslation.slangExplanations.map((item, index) => (
+              {/* Divider */}
+              <View
+                className="h-px mb-3"
+                style={{ backgroundColor: "#4C1D95" }}
+              />
+
+              {/* Translated text */}
+              <Text className="text-base leading-6 mb-1" style={{ color: "#F9FAFB" }}>
+                {translatedText}
+              </Text>
+
+              {/* Cultural hints */}
+              {culturalHints.length > 0 && (
+                <View className="mt-3 pt-3 border-t" style={{ borderTopColor: "#4C1D95" }}>
                   <Text
-                    key={index}
-                    className="text-xs leading-4 mb-1"
-                    style={{ color: "#FEF3C7" }}
+                    className="text-xs font-semibold mb-2"
+                    style={{ color: "#93C5FD" }}
                   >
-                    • <Text style={{ fontWeight: "600" }}>{item.term}</Text> -{" "}
-                    {item.explanation}
+                    ℹ️ Cultural Context:
                   </Text>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
+                  {culturalHints.map((hint, index) => (
+                    <Text
+                      key={index}
+                      className="text-xs leading-5 mb-1.5 pl-1"
+                      style={{ color: "#E0E7FF" }}
+                    >
+                      • {hint}
+                    </Text>
+                  ))}
+                </View>
+              )}
+
+              {/* Slang explanations */}
+              {slangExplanations.length > 0 && (
+                <View className="mt-3 pt-3 border-t" style={{ borderTopColor: "#4C1D95" }}>
+                  <Text
+                    className="text-xs font-semibold mb-2"
+                    style={{ color: "#FCD34D" }}
+                  >
+                    📚 Slang & Idioms:
+                  </Text>
+                  {slangExplanations.map((item, index) => (
+                    <Text
+                      key={index}
+                      className="text-xs leading-5 mb-1.5 pl-1"
+                      style={{ color: "#FEF3C7" }}
+                    >
+                      • <Text style={{ fontWeight: "600" }}>{item.term}</Text> -{" "}
+                      {item.explanation}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })()}
 
         {/* Translate button */}
         {showTranslateButton && (
