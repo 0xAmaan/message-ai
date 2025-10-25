@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { action, mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
+import { Doc, Id } from "./_generated/dataModel";
 import Anthropic from "@anthropic-ai/sdk";
 
 const SYSTEM_PROMPT = `You are the International Communicator - an AI assistant that helps users craft culturally aware and contextually appropriate message responses.
@@ -27,23 +28,32 @@ export const generateSmartReplies = action({
     conversationId: v.id("conversations"),
     currentUserId: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    suggestions: string[];
+    lastMessageId: Id<"messages">;
+  } | null> => {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY not configured");
     }
 
     // Fetch last 20 messages for context
-    const messages = await ctx.runQuery(api.messages.getMessages, {
-      conversationId: args.conversationId,
-      limit: 20,
-    });
+    const messages: Doc<"messages">[] | null = await ctx.runQuery(
+      api.messages.getMessages,
+      {
+        conversationId: args.conversationId,
+        limit: 20,
+      },
+    );
 
     if (!messages || messages.length === 0) {
       return null;
     }
 
-    const lastMessage = messages[messages.length - 1];
+    const lastMessage: Doc<"messages"> = messages[messages.length - 1];
 
     // Don't generate suggestions for messages sent by current user
     if (lastMessage.senderId === args.currentUserId) {
@@ -52,7 +62,7 @@ export const generateSmartReplies = action({
 
     // Build conversation context for the AI
     const conversationContext = messages
-      .map((msg) => {
+      .map((msg: Doc<"messages">) => {
         const sender = msg.senderId === args.currentUserId ? "You" : "Other";
         return `${sender}: ${msg.content}`;
       })

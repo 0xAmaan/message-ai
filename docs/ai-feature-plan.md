@@ -2,7 +2,7 @@
 
 **AI Persona**: International Communicator
 **Advanced Feature**: Context-Aware Smart Replies
-**Status**: Phase 1 Complete ✅
+**Status**: Phase 1 & 2 Complete ✅ | Ready for Testing
 
 ---
 
@@ -93,72 +93,207 @@ Output format: JSON array of exactly 3 string suggestions only
 
 ---
 
-## Phase 2: Frontend UI Component (NEXT)
+## Phase 2: Frontend UI Component ✅ COMPLETED
 
-### Planned Tasks:
+### Completed Tasks:
 
-#### 1. Create SmartReplyChips Component
+#### 1. Created SmartReplyChips Component ✅
 **File**: `components/SmartReplyChips.tsx`
 
-**Features:**
-- Display 3 chips horizontally (no scrolling needed)
-- Shimmer loading state while generating
-- Dismiss button (small X icon)
-- Tap behavior: fills `MessageInput` field (doesn't auto-send)
-- NativeWind styling (violet-600 accent, dark theme)
-- Fade-in animation on appearance
+**Implemented Features:**
+- ✅ Displays 3 chips horizontally (flex-1 for equal width)
+- ✅ Shimmer loading component (`SmartReplyChipsLoading`)
+- ✅ Dismiss button (X icon from lucide-react-native)
+- ✅ Tap behavior: fills `MessageInput` field via ref (doesn't auto-send)
+- ✅ NativeWind styling (violet-900/30 bg, violet-600/50 border, violet text)
+- ✅ Fade-in animation using Animated API (300ms duration)
+- ✅ Auto-dismisses when chip is selected
 
-**Props Interface:**
+**Component API:**
 ```typescript
-{
-  conversationId: Id<"conversations">,
-  onSelectReply: (text: string) => void,
-  onDismiss: () => void
+interface SmartReplyChipsProps {
+  conversationId: Id<"conversations">;
+  onSelectReply: (text: string) => void;
+  onDismiss: () => void;
 }
 ```
 
-#### 2. Integrate into Chat Screen
+**Key Implementation Details:**
+- Uses `useQuery` to subscribe to real-time smart reply updates
+- Animated.View with opacity interpolation for smooth transitions
+- Loading shimmer loops opacity between 0.3-0.7
+- Chips truncate text with `numberOfLines={1}` for long suggestions
+- Dark theme integration (gray-800 background, gray-700 borders)
+
+#### 2. Updated MessageInput Component ✅
+**File**: `components/MessageInput.tsx`
+
+**Changes Made:**
+- ✅ Converted to `forwardRef` component
+- ✅ Added `MessageInputRef` interface with `fillMessage` method
+- ✅ Exposed `useImperativeHandle` for parent control
+- ✅ Added display name to fix ESLint error
+
+**New API:**
+```typescript
+export interface MessageInputRef {
+  fillMessage: (text: string) => void;
+}
+```
+
+#### 3. Integrated into Chat Screen ✅
 **File**: `app/chat/[id].tsx`
 
 **Integration Points:**
-- Place above `<MessageInput>` component
-- Subscribe to smart replies via `useQuery(api.smartReplies.getSmartReplies)`
-- Handle loading/undefined states
-- Pass selected reply to message input
-- Clear suggestions when user sends message
+- ✅ Added ref to `MessageInput` for programmatic text filling
+- ✅ Imported `SmartReplyChips` and `SmartReplyChipsLoading`
+- ✅ Added state management:
+  - `isGeneratingReplies` - tracks API call state
+  - `showSmartReplies` - controls visibility
+- ✅ Placed above `<MessageInput>` in SafeAreaView
+- ✅ Conditional rendering based on loading/data state
+- ✅ Clears suggestions when user sends message or image
+
+**State Management:**
+```typescript
+const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
+const [showSmartReplies, setShowSmartReplies] = useState(true);
+const messageInputRef = useRef<MessageInputRef>(null);
+```
+
+**Event Handlers:**
+- `handleSelectReply`: Fills message input via ref
+- `handleDismissReplies`: Hides chips
+- Updated `handleSendMessage`: Clears smart replies on send
+- Updated `handleSendImage`: Clears smart replies on image send
 
 ---
 
-## Phase 3: Trigger Logic & Caching (PENDING)
+## Phase 3: Trigger Logic & Caching ✅ COMPLETED
 
-### Planned Tasks:
+### Completed Tasks:
 
-#### 1. On-Chat-Open Trigger
-- Detect when chat screen mounts
-- Check for unread messages in conversation
-- If unread exists, call `generateSmartReplies` action
-- Display loading state while generating
+#### 1. On-Chat-Open Trigger ✅
+**Implementation in `app/chat/[id].tsx`:**
 
-#### 2. Debounced Auto-Refresh Trigger
-- Listen for new messages via real-time subscription
-- When new message arrives (from other user)
-- Wait 2 seconds (debounce)
-- If user still on screen, regenerate suggestions
+```typescript
+useEffect(() => {
+  const generateRepliesOnOpen = async () => {
+    if (!user?.id || !conversationId || !messages || messages.length === 0) {
+      return;
+    }
 
-#### 3. Cache Invalidation Strategy
-- Clear suggestions when user sends message
-- Tie suggestions to specific `lastMessageId`
-- No time-based expiry (only invalidate on new message)
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.senderId !== user.id && !lastMessage.readBy.includes(user.id)) {
+      setIsGeneratingReplies(true);
+      try {
+        await generateSmartReplies({ conversationId, currentUserId: user.id });
+      } catch (error) {
+        console.error("Failed to generate smart replies:", error);
+      } finally {
+        setIsGeneratingReplies(false);
+      }
+    }
+  };
 
-**Caching Flow:**
+  generateRepliesOnOpen();
+}, [conversationId, user?.id]);
+```
+
+**Features:**
+- ✅ Runs on component mount
+- ✅ Checks if last message is unread
+- ✅ Only generates if message is from other user
+- ✅ Shows loading shimmer during generation
+- ✅ Silent error handling (doesn't block chat)
+
+#### 2. Debounced Auto-Refresh Trigger ✅
+**Implementation in `app/chat/[id].tsx`:**
+
+```typescript
+useEffect(() => {
+  if (!user?.id || !messages || messages.length === 0) {
+    return;
+  }
+
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage.senderId === user.id) {
+    return;
+  }
+
+  const timer = setTimeout(async () => {
+    setIsGeneratingReplies(true);
+    try {
+      await generateSmartReplies({ conversationId, currentUserId: user.id });
+    } catch (error) {
+      console.error("Failed to generate smart replies:", error);
+    } finally {
+      setIsGeneratingReplies(false);
+    }
+  }, 2000);
+
+  return () => clearTimeout(timer);
+}, [messages, user?.id, conversationId, generateSmartReplies]);
+```
+
+**Features:**
+- ✅ 2-second debounce delay
+- ✅ Cancels timer on cleanup (prevents duplicate calls)
+- ✅ Only triggers for messages from other users
+- ✅ Real-time subscription to `messages` query
+- ✅ Automatic regeneration on new message arrival
+
+#### 3. Cache Invalidation Strategy ✅
+**Implementation:**
+
+**On Message Send:**
+```typescript
+const handleSendMessage = async (content: string) => {
+  // ... optimistic message logic
+
+  setShowSmartReplies(false); // Hide UI immediately
+  await clearSmartReplies({ conversationId }); // Clear from DB
+
+  await sendMessage({ conversationId, senderId: user.id, content });
+};
+```
+
+**On Image Send:**
+```typescript
+const handleSendImage = async (imageUri: string) => {
+  // ... image upload logic
+
+  setShowSmartReplies(false);
+  await clearSmartReplies({ conversationId });
+
+  await sendMessage({ conversationId, senderId: user.id, imageId: storageId });
+};
+```
+
+**Caching Flow (Implemented):**
 ```
 New message arrives
   ↓
-Check if suggestions exist for this messageId
+Debounced effect triggers (2s delay)
   ↓
-If yes → display immediately
-If no → generate via API → cache → display
+generateSmartReplies action called
+  ↓
+Backend checks if cached suggestions exist for lastMessageId
+  ↓
+If yes → returns cached data immediately
+If no → calls Claude API → caches result → returns suggestions
+  ↓
+Frontend receives data via real-time query subscription
+  ↓
+SmartReplyChips renders with fade-in animation
 ```
+
+**Cache Characteristics:**
+- ✅ No time-based expiry
+- ✅ Tied to `lastMessageId`
+- ✅ Invalidated only when user sends message
+- ✅ Instant retrieval for repeated views
+- ✅ Convex handles real-time sync automatically
 
 ---
 
@@ -349,9 +484,25 @@ If no → generate via API → cache → display
 
 ## Current Status Summary
 
-**✅ Phase 1 Complete**: Backend infrastructure fully implemented and tested
-**⏭️ Next Step**: Phase 2 - Build SmartReplyChips component and integrate into chat screen
-**⏸️ Awaiting**: User confirmation to proceed to Phase 2
+**✅ Phase 1 Complete**: Backend infrastructure (Convex actions, schema, caching)
+**✅ Phase 2 Complete**: Frontend UI components (SmartReplyChips, MessageInput updates)
+**✅ Phase 3 Complete**: Trigger logic (on-open, debounced refresh, cache invalidation)
+**⏭️ Next Step**: Phase 4 - Polish & error handling (rate limiting, edge cases, optimization)
+**🧪 Ready for Testing**: Core functionality implemented and ready for user testing
 
 **Last Updated**: October 24, 2025
-**Implementation Time**: ~1 hour (Phase 1)
+**Implementation Time**:
+- Phase 1: ~1 hour (Backend)
+- Phase 2: ~1 hour (Frontend UI)
+- Phase 3: ~30 minutes (Trigger logic)
+- **Total**: ~2.5 hours
+
+**Files Modified/Created:**
+- ✅ `convex/schema.ts` - Added smartReplies table
+- ✅ `convex/smartReplies.ts` - New service (165 lines)
+- ✅ `components/SmartReplyChips.tsx` - New component (154 lines)
+- ✅ `components/MessageInput.tsx` - Updated with ref support
+- ✅ `app/chat/[id].tsx` - Integrated smart replies
+- ✅ `.env.local` - Added ANTHROPIC_API_KEY
+- ✅ `package.json` - Added @anthropic-ai/sdk
+- ✅ `docs/ai-feature-plan.md` - This document

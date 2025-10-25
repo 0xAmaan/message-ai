@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePlus } from "lucide-react-native";
@@ -9,12 +9,23 @@ interface MessageInputProps {
   onTypingChange?: (isTyping: boolean) => void;
 }
 
-export function MessageInput({
-  onSend,
-  onSendImage,
-  onTypingChange,
-}: MessageInputProps) {
-  const [message, setMessage] = useState("");
+export interface MessageInputRef {
+  fillMessage: (text: string) => void;
+}
+
+export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
+  function MessageInput({ onSend, onSendImage, onTypingChange }, ref) {
+    const [message, setMessage] = useState("");
+
+    // Expose fillMessage method to parent
+    useImperativeHandle(ref, () => ({
+      fillMessage: (text: string) => {
+        setMessage(text);
+        if (onTypingChange) {
+          onTypingChange(text.length > 0);
+        }
+      },
+    }));
 
   const handleTextChange = (text: string) => {
     setMessage(text);
@@ -106,4 +117,4 @@ export function MessageInput({
       </TouchableOpacity>
     </View>
   );
-}
+});

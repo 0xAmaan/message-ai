@@ -52,4 +52,28 @@ export default defineSchema({
     suggestions: v.array(v.string()), // Array of 3 reply options
     generatedAt: v.number(),
   }).index("by_conversation_message", ["conversationId", "lastMessageId"]),
+
+  // Message translations (cached AI translations)
+  messageTranslations: defineTable({
+    messageId: v.id("messages"),
+    targetLanguage: v.string(),
+    translatedText: v.string(),
+    detectedSourceLanguage: v.string(),
+    culturalHints: v.array(v.string()),
+    slangExplanations: v.array(
+      v.object({
+        term: v.string(),
+        explanation: v.string(),
+      }),
+    ),
+    generatedAt: v.number(),
+  }).index("by_message_language", ["messageId", "targetLanguage"]),
+
+  // Rate limiting for AI features (tracks usage per user per hour)
+  rateLimits: defineTable({
+    userId: v.string(), // clerkId
+    feature: v.string(), // "translation" or "smartReplies"
+    count: v.number(),
+    windowStart: v.number(), // Timestamp of the start of the current hour
+  }).index("by_user_feature", ["userId", "feature"]),
 });

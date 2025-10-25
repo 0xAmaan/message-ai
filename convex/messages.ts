@@ -40,12 +40,22 @@ export const getMessages = query({
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
-        q.eq("conversationId", args.conversationId)
+        q.eq("conversationId", args.conversationId),
       )
       .order("desc")
       .take(args.limit ?? 100);
 
     return messages.reverse(); // Return in chronological order
+  },
+});
+
+// Get a single message by ID
+export const getMessage = query({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.messageId);
   },
 });
 
@@ -105,7 +115,7 @@ export const markConversationAsRead = mutation({
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
-        q.eq("conversationId", args.conversationId)
+        q.eq("conversationId", args.conversationId),
       )
       .collect();
 
@@ -119,8 +129,8 @@ export const markConversationAsRead = mutation({
             deliveredTo: msg.deliveredTo.includes(args.userId)
               ? msg.deliveredTo
               : [...msg.deliveredTo, args.userId],
-          })
-        )
+          }),
+        ),
     );
   },
 });

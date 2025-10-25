@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/clerk-expo";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -14,7 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MessageBubble } from "../../components/MessageBubble";
-import { MessageInput } from "../../components/MessageInput";
+import {
+  MessageInput,
+  MessageInputRef,
+} from "../../components/MessageInput";
+import {
+  SmartReplyChips,
+  SmartReplyChipsLoading,
+} from "../../components/SmartReplyChips";
 
 // Optimistic message type
 interface OptimisticMessage {
@@ -33,10 +40,13 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useUser();
   const flatListRef = useRef<FlatList>(null);
+  const messageInputRef = useRef<MessageInputRef>(null);
   const navigation = useNavigation();
   const [optimisticMessages, setOptimisticMessages] = useState<
     OptimisticMessage[]
   >([]);
+  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
+  const [showSmartReplies, setShowSmartReplies] = useState(true);
 
   const conversationId = id as Id<"conversations">;
 
@@ -65,6 +75,10 @@ export default function ChatScreen() {
   const sendMessage = useMutation(api.messages.sendMessage);
   const markAsRead = useMutation(api.messages.markConversationAsRead);
   const updateTypingStatus = useMutation(api.typing.updateTypingStatus);
+  const clearSmartReplies = useMutation(api.smartReplies.clearSmartReplies);
+
+  // Actions
+  const generateSmartReplies = useAction(api.smartReplies.generateSmartReplies);
 
   // Get the other user (for direct chats)
   const otherUser =
@@ -96,6 +110,34 @@ export default function ChatScreen() {
     }
   }, [conversationId, user?.id, markAsRead]);
 
+  // Generate smart replies when screen opens with unread messages
+  useEffect(() => {
+    const generateRepliesOnOpen = async () => {
+      if (!user?.id || !conversationId || !messages || messages.length === 0) {
+        return;
+      }
+
+      // Check if the last message is from another user
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.senderId !== user.id && !lastMessage.readBy.includes(user.id)) {
+        setIsGeneratingReplies(true);
+        try {
+          await generateSmartReplies({
+            conversationId,
+            currentUserId: user.id,
+          });
+        } catch (error) {
+          console.error("Failed to generate smart replies:", error);
+        } finally {
+          setIsGeneratingReplies(false);
+        }
+      }
+    };
+
+    generateRepliesOnOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, user?.id]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (allMessages && allMessages.length > 0) {
@@ -104,6 +146,37 @@ export default function ChatScreen() {
       }, 100);
     }
   }, [allMessages]);
+
+  // Debounced smart reply generation when new messages arrive
+  useEffect(() => {
+    if (!user?.id || !messages || messages.length === 0) {
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+
+    // Only generate if last message is from another user
+    if (lastMessage.senderId === user.id) {
+      return;
+    }
+
+    // Debounce: wait 2 seconds before generating
+    const timer = setTimeout(async () => {
+      setIsGeneratingReplies(true);
+      try {
+        await generateSmartReplies({
+          conversationId,
+          currentUserId: user.id,
+        });
+      } catch (error) {
+        console.error("Failed to generate smart replies:", error);
+      } finally {
+        setIsGeneratingReplies(false);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [messages, user?.id, conversationId, generateSmartReplies]);
 
   const handleTypingChange = useCallback(
     async (isTyping: boolean) => {
@@ -142,12 +215,18 @@ export default function ChatScreen() {
       // Add to optimistic messages
       setOptimisticMessages((prev) => [...prev, optimisticMsg]);
 
+      // Clear smart replies when user sends a message
+      setShowSmartReplies(false);
+
       try {
         await sendMessage({
           conversationId,
           senderId: user.id,
           content: content.trim(),
         });
+
+        // Clear cached smart replies
+        await clearSmartReplies({ conversationId });
 
         // Remove optimistic message after successful send
         setOptimisticMessages((prev) =>
@@ -161,7 +240,7 @@ export default function ChatScreen() {
         );
       }
     },
-    [user?.id, conversationId, sendMessage],
+    [user?.id, conversationId, sendMessage, clearSmartReplies],
   );
 
   const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
@@ -189,6 +268,10 @@ export default function ChatScreen() {
 
         const { storageId } = await uploadResponse.json();
 
+        // Clear smart replies when user sends an image
+        setShowSmartReplies(false);
+        await clearSmartReplies({ conversationId });
+
         // Send message with image
         await sendMessage({
           conversationId,
@@ -201,8 +284,16 @@ export default function ChatScreen() {
         alert("Failed to send image. Please try again.");
       }
     },
-    [user?.id, conversationId, sendMessage, generateUploadUrl],
+    [user?.id, conversationId, sendMessage, generateUploadUrl, clearSmartReplies],
   );
+
+  const handleSelectReply = useCallback((text: string) => {
+    messageInputRef.current?.fillMessage(text);
+  }, []);
+
+  const handleDismissReplies = useCallback(() => {
+    setShowSmartReplies(false);
+  }, []);
 
   if (!conversation || !messages || !participants) {
     return (
@@ -230,6 +321,7 @@ export default function ChatScreen() {
               message={item}
               isOwnMessage={item.senderId === user?.id}
               isPending={(item as OptimisticMessage).isPending}
+              currentUserId={user?.id}
             />
           )}
           keyExtractor={(item) => item._id}
@@ -260,9 +352,26 @@ export default function ChatScreen() {
           }
         />
 
+        {/* Smart Reply Chips */}
+        {showSmartReplies && user?.id && (
+          <>
+            {isGeneratingReplies ? (
+              <SmartReplyChipsLoading />
+            ) : (
+              <SmartReplyChips
+                conversationId={conversationId}
+                currentUserId={user.id}
+                onSelectReply={handleSelectReply}
+                onDismiss={handleDismissReplies}
+              />
+            )}
+          </>
+        )}
+
         {/* Message Input */}
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: "#1F2937" }}>
           <MessageInput
+            ref={messageInputRef}
             onSend={handleSendMessage}
             onSendImage={handleSendImage}
             onTypingChange={handleTypingChange}

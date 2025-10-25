@@ -12,6 +12,7 @@ import type * as conversations from "../conversations.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as smartReplies from "../smartReplies.js";
+import type * as translations from "../translations.js";
 import type * as typing from "../typing.js";
 import type * as users from "../users.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   messages: typeof messages;
   smartReplies: typeof smartReplies;
+  translations: typeof translations;
   typing: typeof typing;
   users: typeof users;
 }>;
