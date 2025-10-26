@@ -85,10 +85,10 @@ export function ChatListItem({
     return (
       <View className="flex-row p-4 bg-gray-800 border-b border-gray-700">
         <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3">
-          <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>...</Text>
+          <Text className="text-xl font-semibold text-gray-50">...</Text>
         </View>
         <View className="flex-1 justify-center">
-          <Text className="text-base font-semibold" style={{ color: "#F9FAFB" }}>
+          <Text className="text-base font-semibold text-gray-50">
             Loading...
           </Text>
         </View>
@@ -106,7 +106,7 @@ export function ChatListItem({
       <View
         className={`w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
       >
-        <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+        <Text className="text-xl font-semibold text-gray-50">
           {displayName.charAt(0).toUpperCase()}
         </Text>
         {otherUser?.isOnline && (
@@ -118,18 +118,17 @@ export function ChatListItem({
       <View className="flex-1 justify-center">
         <View className="flex-row justify-between items-center mb-1">
           <Text
-            className="text-base font-semibold flex-1"
-            style={{ color: "#F9FAFB" }}
+            className="text-base font-semibold flex-1 text-gray-50"
             numberOfLines={1}
           >
             {displayName}
           </Text>
-          <Text className="text-xs ml-2" style={{ color: "#9CA3AF" }}>
+          <Text className="text-xs ml-2 text-gray-400">
             {formatTime(conversation.lastMessageAt)}
           </Text>
         </View>
 
-        <Text className="text-sm" style={{ color: "#9CA3AF" }} numberOfLines={2}>
+        <Text className="text-sm text-gray-400" numberOfLines={2}>
           {lastMessage?.senderId === currentUserId && "You: "}
           {lastMessageText}
         </Text>

@@ -1,39 +1,6 @@
-// App-wide constants - Dark Mode Theme
-
-export const COLORS = {
-  // Purple accent colors
-  primary: "#8B5CF6", // violet-500
-  primaryDark: "#7C3AED", // violet-600
-  primaryLight: "#A78BFA", // violet-400
-
-  // Dark backgrounds
-  background: "#111827", // gray-900
-  surface: "#1F2937", // gray-800
-  surfaceLight: "#374151", // gray-700
-
-  // Text colors
-  textPrimary: "#F9FAFB", // gray-50
-  textSecondary: "#9CA3AF", // gray-400
-  textTertiary: "#6B7280", // gray-500
-
-  // Legacy compatibility (kept for gradual migration)
-  white: "#F9FAFB",
-  black: "#111827",
-  gray: "#9CA3AF",
-  lightGray: "#374151",
-
-  // Message bubbles
-  sent: "#8B5CF6", // violet-500 for sent messages
-  received: "#374151", // gray-700 for received messages
-
-  // Status colors
-  online: "#10B981", // emerald-500
-  offline: "#6B7280", // gray-500
-
-  // Borders
-  border: "#374151", // gray-700
-  borderLight: "#4B5563", // gray-600
-};
+// App-wide constants
+// Note: Colors have been moved to app/global.css as CSS variables
+// Use NativeWind classes instead (e.g., text-gray-50, bg-violet-600, etc.)
 
 export const SIZES = {
   padding: 16,

@@ -136,36 +136,26 @@ export default function VerifyOTPScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: "#111827" }}>
-      <Text style={{ fontSize: 30, fontWeight: "bold", marginTop: 40, marginBottom: 8, color: "#F9FAFB" }}>
+    <View className="flex-1 p-5 bg-gray-900">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
         {isSigningUp ? "Verify Your Phone" : "Welcome Back"}
       </Text>
-      <Text style={{ fontSize: 16, color: "#9CA3AF", marginBottom: 40 }}>
+      <Text className="text-base text-gray-400 mb-10">
         Enter the 6-digit code sent to{"\n"}
         {phoneNumber}
       </Text>
       {!isSigningUp && (
-        <Text style={{ fontSize: 14, color: "#A78BFA", marginBottom: 20 }}>
+        <Text className="text-sm text-violet-400 mb-5">
           Signing you back in...
         </Text>
       )}
 
-      <View style={{ marginBottom: 32 }}>
-        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: "#F9FAFB" }}>
+      <View className="mb-8">
+        <Text className="text-base font-semibold mb-2 text-gray-50">
           Verification Code
         </Text>
         <TextInput
-          style={{
-            borderWidth: 1,
-            borderColor: "#374151",
-            backgroundColor: "#1F2937",
-            borderRadius: 8,
-            padding: 16,
-            fontSize: 24,
-            textAlign: "center",
-            letterSpacing: 8,
-            color: "#F9FAFB"
-          }}
+          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-2xl text-center tracking-widest text-gray-50"
           placeholder="000000"
           placeholderTextColor="#9CA3AF"
           keyboardType="number-pad"
@@ -177,24 +167,18 @@ export default function VerifyOTPScreen() {
       </View>
 
       <TouchableOpacity
-        style={{
-          backgroundColor: "#8B5CF6",
-          padding: 16,
-          borderRadius: 8,
-          alignItems: "center",
-          marginBottom: 20,
-          opacity: loading || code.length !== 6 ? 0.6 : 1
-        }}
+        className="bg-violet-600 p-4 rounded-lg items-center mb-5"
+        style={{ opacity: loading || code.length !== 6 ? 0.6 : 1 }}
         onPress={handleVerify}
         disabled={loading || code.length !== 6}
       >
-        <Text style={{ color: "#F9FAFB", fontSize: 16, fontWeight: "600" }}>
+        <Text className="text-gray-50 text-base font-semibold">
           {loading ? "Verifying..." : "Verify"}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleResend} style={{ alignItems: "center" }}>
-        <Text style={{ color: "#A78BFA", fontSize: 14 }}>
+      <TouchableOpacity onPress={handleResend} className="items-center">
+        <Text className="text-violet-400 text-sm">
           Didn&apos;t receive code? Resend
         </Text>
       </TouchableOpacity>

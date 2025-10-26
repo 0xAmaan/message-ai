@@ -91,8 +91,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
       <View className="flex-1 bg-gray-700 rounded-3xl px-4 py-2 mr-2 min-h-[40px] max-h-[100px]">
         <TextInput
-          className="text-base min-h-[24px]"
-          style={{ color: "#F9FAFB" }}
+          className="text-base min-h-[24px] text-gray-50"
           placeholder="Message"
           placeholderTextColor="#9CA3AF"
           value={message}
@@ -111,7 +110,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         onPress={handleSend}
         disabled={!message.trim()}
       >
-        <Text className="text-xl font-bold" style={{ color: "#F9FAFB" }}>
+        <Text className="text-xl font-bold text-gray-50">
           ↑
         </Text>
       </TouchableOpacity>

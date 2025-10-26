@@ -22,7 +22,7 @@ export const TranslateButton = ({
       {isTranslating ? (
         <View className="flex-row items-center">
           <ActivityIndicator size="small" color="#8B5CF6" />
-          <Text className="text-xs ml-2" style={{ color: "#9CA3AF" }}>
+          <Text className="text-xs ml-2 text-gray-400">
             Translating...
           </Text>
         </View>
@@ -30,8 +30,7 @@ export const TranslateButton = ({
         <View className="flex-row items-center">
           <Text className="text-sm">🌐</Text>
           <Text
-            className="text-xs ml-1"
-            style={{ color: isOwnMessage ? "#C4B5FD" : "#A78BFA" }}
+            className={`text-xs ml-1 ${isOwnMessage ? "text-violet-300" : "text-violet-400"}`}
           >
             {isTranslated ? "Hide Translation" : "Translate"}
           </Text>

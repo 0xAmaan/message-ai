@@ -111,8 +111,7 @@ export default function ChatsScreen() {
         )}
         keyExtractor={(item) => item._id}
         contentContainerStyle={{ paddingBottom: 100 }}
-        className="flex-1"
-        style={{ backgroundColor: "#111827" }}
+        className="flex-1 bg-gray-900"
       />
 
       {/* Floating action button for new chat */}

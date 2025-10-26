@@ -329,14 +329,13 @@ export default function ChatScreen() {
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: false })
           }
-          className="flex-1"
-          style={{ backgroundColor: "#111827" }}
+          className="flex-1 bg-gray-900"
           ListEmptyComponent={
             <View className="flex-1 justify-center items-center py-20">
-              <Text className="text-sm" style={{ color: "#9CA3AF" }}>
+              <Text className="text-sm text-gray-400">
                 No messages yet
               </Text>
-              <Text className="text-xs mt-2" style={{ color: "#6B7280" }}>
+              <Text className="text-xs mt-2 text-gray-500">
                 Send a message to start the conversation
               </Text>
             </View>
@@ -344,7 +343,7 @@ export default function ChatScreen() {
           ListFooterComponent={
             typingUsers && typingUsers.length > 0 ? (
               <View className="px-4 py-2">
-                <Text className="text-sm italic" style={{ color: "#9CA3AF" }}>
+                <Text className="text-sm italic text-gray-400">
                   {typingUsers[0].name} is typing...
                 </Text>
               </View>
@@ -369,7 +368,7 @@ export default function ChatScreen() {
         )}
 
         {/* Message Input */}
-        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: "#1F2937" }}>
+        <SafeAreaView edges={["bottom"]} className="bg-gray-800">
           <MessageInput
             ref={messageInputRef}
             onSend={handleSendMessage}

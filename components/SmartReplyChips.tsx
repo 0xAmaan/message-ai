@@ -70,48 +70,40 @@ export function SmartReplyChips({
   }
 
   return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        backgroundColor: "#1F2937",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderTopWidth: 1,
-        borderTopColor: "#374151",
-      }}
-    >
-      {/* Header with dismiss button */}
-      <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-xs font-medium" style={{ color: "#9CA3AF" }}>
-          Smart Replies
-        </Text>
-        <TouchableOpacity
-          onPress={handleDismiss}
-          className="p-1 active:opacity-50"
-        >
-          <X color="#9CA3AF" size={16} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Reply chips */}
-      <View className="flex-row gap-2">
-        {smartReply.suggestions.map((suggestion, index) => (
+    <View className="bg-gray-800 px-3 py-2 border-t border-gray-700">
+      <Animated.View style={{ opacity: fadeAnim }}>
+        {/* Header with dismiss button */}
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-xs font-medium text-gray-400">
+            Smart Replies
+          </Text>
           <TouchableOpacity
-            key={index}
-            onPress={() => handleSelectReply(suggestion)}
-            className="flex-1 bg-violet-900/30 border border-violet-600/50 rounded-full py-2 px-3 active:bg-violet-900/50"
+            onPress={handleDismiss}
+            className="p-1 active:opacity-50"
           >
-            <Text
-              className="text-sm text-center"
-              style={{ color: "#C4B5FD" }}
-              numberOfLines={1}
-            >
-              {suggestion}
-            </Text>
+            <X color="#9CA3AF" size={16} />
           </TouchableOpacity>
-        ))}
-      </View>
-    </Animated.View>
+        </View>
+
+        {/* Reply chips */}
+        <View className="flex-row gap-2">
+          {smartReply.suggestions.map((suggestion, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleSelectReply(suggestion)}
+              className="flex-1 bg-violet-900/30 border border-violet-600/50 rounded-full py-2 px-3 active:bg-violet-900/50"
+            >
+              <Text
+                className="text-sm text-center text-violet-300"
+                numberOfLines={1}
+              >
+                {suggestion}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -142,17 +134,9 @@ export function SmartReplyChipsLoading() {
   });
 
   return (
-    <View
-      style={{
-        backgroundColor: "#1F2937",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderTopWidth: 1,
-        borderTopColor: "#374151",
-      }}
-    >
+    <View className="bg-gray-800 px-3 py-2 border-t border-gray-700">
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-xs font-medium" style={{ color: "#9CA3AF" }}>
+        <Text className="text-xs font-medium text-gray-400">
           Generating suggestions...
         </Text>
       </View>

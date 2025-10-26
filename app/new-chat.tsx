@@ -84,8 +84,7 @@ export default function NewChatScreen() {
       {/* Search Input */}
       <View className="p-4 bg-gray-800 border-b border-gray-700">
         <TextInput
-          className="bg-gray-700 rounded-lg px-4 py-3 text-base mb-2"
-          style={{ color: "#F9FAFB" }}
+          className="bg-gray-700 rounded-lg px-4 py-3 text-base mb-2 text-gray-50"
           placeholder="Search by phone number (+1234567890)"
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
@@ -94,7 +93,7 @@ export default function NewChatScreen() {
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Text className="text-xs" style={{ color: "#9CA3AF" }}>
+        <Text className="text-xs text-gray-400">
           Tip: Select multiple users to create a group chat
         </Text>
       </View>
@@ -106,10 +105,7 @@ export default function NewChatScreen() {
             className="bg-violet-600 py-3 rounded-lg active:bg-violet-700"
             onPress={handleCreateChat}
           >
-            <Text
-              className="text-center font-semibold text-base"
-              style={{ color: "#F9FAFB" }}
-            >
+            <Text className="text-center font-semibold text-base text-gray-50">
               {selectedUsers.length === 1
                 ? "Start Chat"
                 : `Create Group (${selectedUsers.length + 1} people)`}
@@ -126,10 +122,10 @@ export default function NewChatScreen() {
       ) : displayUsers.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
           <Text className="text-6xl mb-4">👥</Text>
-          <Text className="text-xl font-bold mb-2" style={{ color: "#F9FAFB" }}>
+          <Text className="text-xl font-bold mb-2 text-gray-50">
             {isSearching ? "No user found" : "No users available"}
           </Text>
-          <Text className="text-sm text-center" style={{ color: "#9CA3AF" }}>
+          <Text className="text-sm text-center text-gray-400">
             {isSearching
               ? "Try searching with a different phone number"
               : "Users will appear here once they sign up"}
@@ -157,14 +153,14 @@ export default function NewChatScreen() {
                   }`}
                 >
                   {isSelected && (
-                    <Text className="text-xs font-bold" style={{ color: "#F9FAFB" }}>
+                    <Text className="text-xs font-bold text-gray-50">
                       ✓
                     </Text>
                   )}
                 </View>
 
                 <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative">
-                  <Text className="text-xl font-semibold" style={{ color: "#F9FAFB" }}>
+                  <Text className="text-xl font-semibold text-gray-50">
                     {item.name.charAt(0).toUpperCase()}
                   </Text>
                   {item.isOnline && (
@@ -173,20 +169,17 @@ export default function NewChatScreen() {
                 </View>
 
                 <View className="flex-1">
-                  <Text
-                    className="text-base font-semibold mb-1"
-                    style={{ color: "#F9FAFB" }}
-                  >
+                  <Text className="text-base font-semibold mb-1 text-gray-50">
                     {item.name}
                   </Text>
-                  <Text className="text-sm" style={{ color: "#9CA3AF" }}>
+                  <Text className="text-sm text-gray-400">
                     {item.phoneNumber}
                   </Text>
                 </View>
 
                 {item.isOnline && (
                   <View className="bg-emerald-500 px-2 py-1 rounded-xl">
-                    <Text className="text-xs font-semibold" style={{ color: "#F9FAFB" }}>
+                    <Text className="text-xs font-semibold text-gray-50">
                       Online
                     </Text>
                   </View>

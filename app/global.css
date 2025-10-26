@@ -3,3 +3,35 @@
 @import "tailwindcss/utilities.css";
 
 @import "nativewind/theme";
+
+/* Custom color variables for MessageAI - Dark Mode Theme */
+@layer theme {
+  :root {
+    /* Purple accent colors */
+    --color-primary: #8b5cf6; /* violet-500 */
+    --color-primary-dark: #7c3aed; /* violet-600 */
+    --color-primary-light: #a78bfa; /* violet-400 */
+
+    /* Dark backgrounds */
+    --color-background: #111827; /* gray-900 */
+    --color-surface: #1f2937; /* gray-800 */
+    --color-surface-light: #374151; /* gray-700 */
+
+    /* Text colors */
+    --color-text-primary: #f9fafb; /* gray-50 */
+    --color-text-secondary: #9ca3af; /* gray-400 */
+    --color-text-tertiary: #6b7280; /* gray-500 */
+
+    /* Message bubbles */
+    --color-message-sent: #8b5cf6; /* violet-500 */
+    --color-message-received: #374151; /* gray-700 */
+
+    /* Status colors */
+    --color-online: #10b981; /* emerald-500 */
+    --color-offline: #6b7280; /* gray-500 */
+
+    /* Borders */
+    --color-border: #374151; /* gray-700 */
+    --color-border-light: #4b5563; /* gray-600 */
+  }
+}
