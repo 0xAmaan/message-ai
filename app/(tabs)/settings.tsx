@@ -27,7 +27,7 @@ const SettingsScreen = () => {
           <Text className="text-sm text-gray-400 mb-3">PROFILE</Text>
           <View className="flex-row items-center">
             {/* Profile Picture */}
-            <View className="w-16 h-16 rounded-full justify-center items-center mr-4" style={{ backgroundColor: '#3D88F7' }}>
+            <View className="w-16 h-16 rounded-full bg-primary justify-center items-center mr-4">
               <Text className="text-2xl font-semibold text-gray-50">
                 {userIdentifier.charAt(0).toUpperCase()}
               </Text>

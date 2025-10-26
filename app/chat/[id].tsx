@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/clerk-expo";
@@ -14,10 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MessageBubble } from "../../components/MessageBubble";
-import {
-  MessageInput,
-  MessageInputRef,
-} from "../../components/MessageInput";
+import { MessageInput, MessageInputRef } from "../../components/MessageInput";
 import {
   SmartReplyChips,
   SmartReplyChipsLoading,
@@ -89,10 +87,9 @@ const ChatScreen = () => {
   const displayName = otherUser?.name || "Chat";
 
   // Merge real messages with optimistic messages
-  const allMessages = [
-    ...(messages || []),
-    ...optimisticMessages,
-  ].sort((a, b) => a.createdAt - b.createdAt);
+  const allMessages = [...(messages || []), ...optimisticMessages].sort(
+    (a, b) => a.createdAt - b.createdAt,
+  );
 
   // Update navigation title with user name
   useEffect(() => {
@@ -119,7 +116,10 @@ const ChatScreen = () => {
 
       // Check if the last message is from another user
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage.senderId !== user.id && !lastMessage.readBy.includes(user.id)) {
+      if (
+        lastMessage.senderId !== user.id &&
+        !lastMessage.readBy.includes(user.id)
+      ) {
         setIsGeneratingReplies(true);
         try {
           await generateSmartReplies({
@@ -284,7 +284,13 @@ const ChatScreen = () => {
         alert("Failed to send image. Please try again.");
       }
     },
-    [user?.id, conversationId, sendMessage, generateUploadUrl, clearSmartReplies],
+    [
+      user?.id,
+      conversationId,
+      sendMessage,
+      generateUploadUrl,
+      clearSmartReplies,
+    ],
   );
 
   const handleSelectReply = useCallback((text: string) => {
@@ -307,6 +313,8 @@ const ChatScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-900">
+      <Header navigation={navigation} />
+
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -332,9 +340,7 @@ const ChatScreen = () => {
           className="flex-1 bg-gray-900"
           ListEmptyComponent={
             <View className="flex-1 justify-center items-center py-20">
-              <Text className="text-sm text-gray-400">
-                No messages yet
-              </Text>
+              <Text className="text-sm text-gray-400">No messages yet</Text>
               <Text className="text-xs mt-2 text-gray-500">
                 Send a message to start the conversation
               </Text>

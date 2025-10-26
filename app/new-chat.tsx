@@ -1,7 +1,8 @@
+import Header from "@/components/Header";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -19,6 +20,8 @@ const NewChatScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+  const navigation = useNavigation();
 
   // Query to find user by phone number
   const searchedUser = useQuery(
@@ -81,6 +84,8 @@ const NewChatScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-900">
+      <Header navigation={navigation} />
+
       {/* Search Input */}
       <View className="p-4 bg-gray-800 border-b border-gray-700">
         <TextInput
@@ -103,7 +108,7 @@ const NewChatScreen = () => {
         <View className="p-4 bg-gray-800 border-b border-gray-700">
           <TouchableOpacity
             className="py-3 rounded-lg active:opacity-80"
-            style={{ backgroundColor: '#3D88F7' }}
+            style={{ backgroundColor: "#3D88F7" }}
             onPress={handleCreateChat}
           >
             <Text className="text-center font-semibold text-base text-gray-50">
@@ -140,25 +145,34 @@ const NewChatScreen = () => {
             return (
               <TouchableOpacity
                 className={`flex-row items-center p-4 border-b border-gray-700 active:bg-gray-700`}
-                style={{ backgroundColor: isSelected ? 'rgba(61, 136, 247, 0.2)' : '#1A1A1A' }}
+                style={{
+                  backgroundColor: isSelected
+                    ? "rgba(61, 136, 247, 0.2)"
+                    : "#1A1A1A",
+                }}
                 onPress={() => handleToggleUser(item.clerkId)}
                 activeOpacity={0.7}
               >
                 {/* Selection indicator */}
                 <View
                   className={`w-6 h-6 rounded-full border-2 mr-3 justify-center items-center ${
-                    isSelected
-                      ? ""
-                      : "border-gray-600"
+                    isSelected ? "" : "border-gray-600"
                   }`}
-                  style={isSelected ? { backgroundColor: '#3D88F7', borderColor: '#3D88F7' } : {}}
+                  style={
+                    isSelected
+                      ? { backgroundColor: "#3D88F7", borderColor: "#3D88F7" }
+                      : {}
+                  }
                 >
                   {isSelected && (
                     <Text className="text-xs font-bold text-gray-50">✓</Text>
                   )}
                 </View>
 
-                <View className="w-12 h-12 rounded-full justify-center items-center mr-3 relative" style={{ backgroundColor: '#3D88F7' }}>
+                <View
+                  className="w-12 h-12 rounded-full justify-center items-center mr-3 relative"
+                  style={{ backgroundColor: "#3D88F7" }}
+                >
                   <Text className="text-xl font-semibold text-gray-50">
                     {item.name.charAt(0).toUpperCase()}
                   </Text>

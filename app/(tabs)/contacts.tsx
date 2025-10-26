@@ -83,7 +83,7 @@ const ContactsScreen = () => {
               activeOpacity={0.7}
             >
               {/* Profile Picture */}
-              <View className="w-14 h-14 rounded-full justify-center items-center mr-4 relative" style={{ backgroundColor: '#3D88F7' }}>
+              <View className="w-14 h-14 rounded-full bg-primary justify-center items-center mr-4 relative">
                 <Text className="text-xl font-semibold text-gray-50">
                   {item.name.charAt(0).toUpperCase()}
                 </Text>

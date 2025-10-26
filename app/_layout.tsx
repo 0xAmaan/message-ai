@@ -119,32 +119,11 @@ const RootLayoutNav = () => {
   }, [isSignedIn, isLoaded, segments, router]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "#000000" },
-        headerTintColor: "#F9FAFB",
-        headerTitleStyle: { fontWeight: "bold" },
-        contentStyle: { backgroundColor: "#000000" },
-      }}
-    >
+    <Stack>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="chat/[id]"
-        options={{
-          headerShown: true,
-          title: "Chat",
-          headerBackTitle: "Back",
-        }}
-      />
-      <Stack.Screen
-        name="new-chat"
-        options={{
-          headerShown: true,
-          title: "New Chat",
-          headerBackTitle: "Back",
-        }}
-      />
+      <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="new-chat" options={{ headerShown: false }} />
     </Stack>
   );
 };

@@ -9,7 +9,7 @@ const AuthRoutesLayout = () => {
       screenOptions={{
         headerStyle: { backgroundColor: "#1F2937" },
         headerTintColor: "#F9FAFB", // gray-50
-        headerTitleStyle: { fontWeight: "bold" },
+        // headerTitleStyle: { fontWeight: "bold" },
         contentStyle: { backgroundColor: "#111827" }, // gray-900
       }}
     >

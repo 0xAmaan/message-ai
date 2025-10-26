@@ -1,27 +1,15 @@
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { CircleUser, MessageCircle, Settings } from "lucide-react-native";
-import { BlurView } from "expo-blur";
+import { FloatingTabBar } from "@/components/FloatingTabBar";
 
 const TabsLayout = () => {
   return (
     <>
       <StatusBar style="light" />
       <Tabs
+        tabBar={(props) => <FloatingTabBar {...props} />}
         screenOptions={{
-          tabBarActiveTintColor: "#3D88F7", // blue
-          tabBarInactiveTintColor: "#9CA3AF", // gray-400
-          tabBarStyle: {
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: "#1A1A1A",
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255, 255, 255, 0.1)",
-            height: 85,
-            paddingBottom: 25,
-          },
           headerStyle: {
             backgroundColor: "#1A1A1A",
           },

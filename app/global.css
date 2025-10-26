@@ -4,6 +4,12 @@
 
 @import "nativewind/theme";
 
+:root {
+  --background-base: #000000;
+  --background: #1a1a1a;
+  --primary: #3d88f7;
+}
+
 @theme inline {
   --color-background-base: #000000; /* pure black */
   --color-background: #1a1a1a; /* lighter dark */
