@@ -1,5 +1,5 @@
 import { Id } from "@/convex/_generated/dataModel";
-import { Text, View, ActivityIndicator, Alert } from "react-native";
+import { Text, View, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -98,13 +98,10 @@ export const MessageBubble = ({
     }
 
     // Don't translate if missing required data or if it's an optimistic message
-    const isOptimisticMessage = typeof message._id === "string" && message._id.startsWith("temp-");
+    const isOptimisticMessage =
+      typeof message._id === "string" && message._id.startsWith("temp-");
 
-    if (
-      isOptimisticMessage ||
-      !currentUserId ||
-      !message.content.trim()
-    ) {
+    if (isOptimisticMessage || !currentUserId || !message.content.trim()) {
       console.log("Missing required data for translation");
       console.log("Is optimistic message:", isOptimisticMessage);
       console.log("Has user ID:", !!currentUserId);
@@ -165,7 +162,8 @@ export const MessageBubble = ({
 
   // Only show translate button for other users' messages with text content
   // AND only for saved messages (not optimistic/pending messages)
-  const isOptimisticMessage = typeof message._id === "string" && message._id.startsWith("temp-");
+  const isOptimisticMessage =
+    typeof message._id === "string" && message._id.startsWith("temp-");
   const showTranslateButton =
     !isOwnMessage &&
     currentUserId &&
@@ -174,20 +172,35 @@ export const MessageBubble = ({
 
   return (
     <View
-      className={`mb-2 flex-row ${isOwnMessage ? "justify-end" : "justify-start"}`}
+      style={[
+        styles.messageRow,
+        isOwnMessage ? styles.messageRowOwn : styles.messageRowOther,
+      ]}
     >
-      <View className={`max-w-[75%]`}>
+      <View style={styles.messageWrapper}>
         <View
-          className={`${message.imageId ? "px-0 py-0" : "px-3 py-2"} rounded-lg ${
+          style={[
+            message.imageId ? styles.bubbleNoImage : styles.bubble,
             isOwnMessage
-              ? "rounded-br-sm"
-              : "bg-gray-700 rounded-bl-sm"
-          }`}
-          style={isOwnMessage ? { backgroundColor: '#3D88F7' } : {}}
+              ? {
+                  backgroundColor: "#3D88F7",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  borderBottomLeftRadius: 16,
+                  borderBottomRightRadius: 4,
+                }
+              : {
+                  backgroundColor: "#1A1A1A",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  borderBottomLeftRadius: 4,
+                  borderBottomRightRadius: 16,
+                },
+          ]}
         >
           {/* Image if present */}
           {message.imageId && (
-            <View className="overflow-hidden rounded-lg">
+            <View style={styles.imageContainer}>
               {imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -195,14 +208,7 @@ export const MessageBubble = ({
                   contentFit="cover"
                 />
               ) : (
-                <View
-                  style={{
-                    width: 200,
-                    height: 200,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
+                <View style={styles.imageLoading}>
                   <ActivityIndicator size="small" color="#3D88F7" />
                 </View>
               )}
@@ -212,7 +218,10 @@ export const MessageBubble = ({
           {/* Text content if present */}
           {message.content && (
             <Text
-              className={`text-base leading-5 mb-1 text-gray-50 ${message.imageId ? "px-3 py-2" : ""}`}
+              style={[
+                styles.messageText,
+                message.imageId && styles.messageTextWithImage,
+              ]}
             >
               {message.content}
             </Text>
@@ -220,15 +229,21 @@ export const MessageBubble = ({
 
           {/* Timestamp and read receipts */}
           <View
-            className={`flex-row items-center justify-end mt-0.5 ${message.imageId ? "px-3 pb-2" : ""}`}
+            style={[
+              styles.timestampContainer,
+              message.imageId && styles.timestampWithImage,
+            ]}
           >
             <Text
-              className={`text-[11px] ${isOwnMessage ? "text-gray-200" : "text-gray-400"}`}
+              style={[
+                styles.timestamp,
+                { color: isOwnMessage ? "#E5E7EB" : "#9CA3AF" },
+              ]}
             >
               {formatTime(message.createdAt)}
             </Text>
             {isOwnMessage && (
-              <Text className="text-xs ml-1 text-blue-400">
+              <Text style={styles.readReceipt}>
                 {isPending ? "⏱" : readByOthers > 0 ? "✓✓" : "✓"}
               </Text>
             )}
@@ -236,78 +251,98 @@ export const MessageBubble = ({
         </View>
 
         {/* Translation Overlay */}
-        {showTranslation && (cachedTranslation || localTranslation) && (() => {
-          // Use cachedTranslation if available, otherwise use localTranslation
-          const translation = cachedTranslation || localTranslation;
-          if (!translation) return null;
+        {showTranslation &&
+          (cachedTranslation || localTranslation) &&
+          (() => {
+            // Use cachedTranslation if available, otherwise use localTranslation
+            const translation = cachedTranslation || localTranslation;
+            if (!translation) return null;
 
-          const translatedText = cachedTranslation
-            ? cachedTranslation.translatedText
-            : localTranslation!.translation;
-          const detectedLang = cachedTranslation
-            ? cachedTranslation.detectedSourceLanguage
-            : localTranslation!.detectedLanguage;
-          const culturalHints = cachedTranslation
-            ? cachedTranslation.culturalHints
-            : localTranslation!.culturalHints;
-          const slangExplanations = cachedTranslation
-            ? cachedTranslation.slangExplanations
-            : localTranslation!.slangExplanations;
+            const translatedText = cachedTranslation
+              ? cachedTranslation.translatedText
+              : localTranslation!.translation;
+            const detectedLang = cachedTranslation
+              ? cachedTranslation.detectedSourceLanguage
+              : localTranslation!.detectedLanguage;
+            const culturalHints = cachedTranslation
+              ? cachedTranslation.culturalHints
+              : localTranslation!.culturalHints;
+            const slangExplanations = cachedTranslation
+              ? cachedTranslation.slangExplanations
+              : localTranslation!.slangExplanations;
 
-          return (
-            <View className="mt-2 px-4 py-3 rounded-lg" style={{ backgroundColor: 'rgba(61, 136, 247, 0.15)' }}>
-              {/* Language indicator */}
-              <View className="flex-row items-center mb-3">
-                <Text className="text-xs font-medium text-blue-300">
-                  {getFlagEmoji(detectedLang)} {detectedLang} → 🇺🇸 English
+            return (
+              <View
+                className="mt-2 px-4 py-3 rounded-lg"
+                style={{ backgroundColor: "rgba(61, 136, 247, 0.15)" }}
+              >
+                {/* Language indicator */}
+                <View className="flex-row items-center mb-3">
+                  <Text className="text-xs font-medium text-blue-300">
+                    {getFlagEmoji(detectedLang)} {detectedLang} → 🇺🇸 English
+                  </Text>
+                </View>
+
+                {/* Divider */}
+                <View
+                  className="h-px mb-3"
+                  style={{ backgroundColor: "rgba(61, 136, 247, 0.3)" }}
+                />
+
+                {/* Translated text */}
+                <Text className="text-base leading-6 mb-1 text-gray-50">
+                  {translatedText}
                 </Text>
+
+                {/* Cultural hints */}
+                {culturalHints.length > 0 && (
+                  <View
+                    className="mt-3 pt-3"
+                    style={{
+                      borderTopWidth: 1,
+                      borderTopColor: "rgba(61, 136, 247, 0.3)",
+                    }}
+                  >
+                    <Text className="text-xs font-semibold mb-2 text-blue-300">
+                      ℹ️ Cultural Context:
+                    </Text>
+                    {culturalHints.map((hint, index) => (
+                      <Text
+                        key={index}
+                        className="text-xs leading-5 mb-1.5 pl-1 text-indigo-100"
+                      >
+                        • {hint}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {/* Slang explanations */}
+                {slangExplanations.length > 0 && (
+                  <View
+                    className="mt-3 pt-3"
+                    style={{
+                      borderTopWidth: 1,
+                      borderTopColor: "rgba(61, 136, 247, 0.3)",
+                    }}
+                  >
+                    <Text className="text-xs font-semibold mb-2 text-yellow-400">
+                      📚 Slang & Idioms:
+                    </Text>
+                    {slangExplanations.map((item, index) => (
+                      <Text
+                        key={index}
+                        className="text-xs leading-5 mb-1.5 pl-1 text-yellow-100"
+                      >
+                        • <Text className="font-semibold">{item.term}</Text> -{" "}
+                        {item.explanation}
+                      </Text>
+                    ))}
+                  </View>
+                )}
               </View>
-
-              {/* Divider */}
-              <View className="h-px mb-3" style={{ backgroundColor: 'rgba(61, 136, 247, 0.3)' }} />
-
-              {/* Translated text */}
-              <Text className="text-base leading-6 mb-1 text-gray-50">
-                {translatedText}
-              </Text>
-
-              {/* Cultural hints */}
-              {culturalHints.length > 0 && (
-                <View className="mt-3 pt-3" style={{ borderTopWidth: 1, borderTopColor: 'rgba(61, 136, 247, 0.3)' }}>
-                  <Text className="text-xs font-semibold mb-2 text-blue-300">
-                    ℹ️ Cultural Context:
-                  </Text>
-                  {culturalHints.map((hint, index) => (
-                    <Text
-                      key={index}
-                      className="text-xs leading-5 mb-1.5 pl-1 text-indigo-100"
-                    >
-                      • {hint}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {/* Slang explanations */}
-              {slangExplanations.length > 0 && (
-                <View className="mt-3 pt-3" style={{ borderTopWidth: 1, borderTopColor: 'rgba(61, 136, 247, 0.3)' }}>
-                  <Text className="text-xs font-semibold mb-2 text-yellow-400">
-                    📚 Slang & Idioms:
-                  </Text>
-                  {slangExplanations.map((item, index) => (
-                    <Text
-                      key={index}
-                      className="text-xs leading-5 mb-1.5 pl-1 text-yellow-100"
-                    >
-                      • <Text className="font-semibold">{item.term}</Text> -{" "}
-                      {item.explanation}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </View>
-          );
-        })()}
+            );
+          })()}
 
         {/* Translate button */}
         {showTranslateButton && (
@@ -322,3 +357,67 @@ export const MessageBubble = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  messageRow: {
+    marginBottom: 12,
+    flexDirection: "row",
+  },
+  messageRowOwn: {
+    justifyContent: "flex-end",
+  },
+  messageRowOther: {
+    justifyContent: "flex-start",
+  },
+  messageWrapper: {
+    maxWidth: "75%",
+  },
+  bubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  bubbleNoImage: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  imageContainer: {
+    overflow: "hidden",
+    borderRadius: 8,
+  },
+  imageLoading: {
+    width: 200,
+    height: 200,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 20,
+    marginBottom: 4,
+    color: "#F9FAFB",
+  },
+  messageTextWithImage: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  timestampContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop: 2,
+  },
+  timestampWithImage: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  timestamp: {
+    fontSize: 13,
+  },
+  readReceipt: {
+    fontSize: 14,
+    marginLeft: 4,
+    paddingRight: 5,
+    color: "#1E40AF",
+    letterSpacing: -6,
+  },
+});

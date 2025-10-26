@@ -10,6 +10,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -40,9 +41,13 @@ const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const messageInputRef = useRef<MessageInputRef>(null);
   const navigation = useNavigation();
+  const previousMessageCountRef = useRef<number>(0);
   const [optimisticMessages, setOptimisticMessages] = useState<
     OptimisticMessage[]
   >([]);
+  const [pendingMessageIds, setPendingMessageIds] = useState<
+    Map<string, Id<"messages">>
+  >(new Map()); // Maps temp ID -> real message ID
   const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
   const [showSmartReplies, setShowSmartReplies] = useState(true);
 
@@ -86,10 +91,47 @@ const ChatScreen = () => {
 
   const displayName = otherUser?.name || "Chat";
 
-  // Merge real messages with optimistic messages
-  const allMessages = [...(messages || []), ...optimisticMessages].sort(
-    (a, b) => a.createdAt - b.createdAt,
-  );
+  // Merge real messages with optimistic messages (with smart deduplication)
+  const allMessages = (() => {
+    const realMessages = messages || [];
+    const realMessageIds = new Set(realMessages.map((m) => m._id));
+
+    // Filter out optimistic messages that have been confirmed (real message exists)
+    const activeOptimisticMessages = optimisticMessages.filter((optMsg) => {
+      const realMessageId = pendingMessageIds.get(optMsg._id);
+      // Keep optimistic message only if its real counterpart hasn't appeared yet
+      return !realMessageId || !realMessageIds.has(realMessageId);
+    });
+
+    return [...realMessages, ...activeOptimisticMessages].sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
+  })();
+
+  // Clean up optimistic messages once real messages arrive
+  useEffect(() => {
+    if (!messages || optimisticMessages.length === 0) return;
+
+    const realMessageIds = new Set(messages.map((m) => m._id));
+    const tempIdsToRemove: string[] = [];
+
+    pendingMessageIds.forEach((realId, tempId) => {
+      if (realMessageIds.has(realId)) {
+        tempIdsToRemove.push(tempId);
+      }
+    });
+
+    if (tempIdsToRemove.length > 0) {
+      setOptimisticMessages((prev) =>
+        prev.filter((msg) => !tempIdsToRemove.includes(msg._id)),
+      );
+      setPendingMessageIds((prev) => {
+        const newMap = new Map(prev);
+        tempIdsToRemove.forEach((tempId) => newMap.delete(tempId));
+        return newMap;
+      });
+    }
+  }, [messages, optimisticMessages.length, pendingMessageIds]);
 
   // Update navigation title with user name
   useEffect(() => {
@@ -138,14 +180,20 @@ const ChatScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, user?.id]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive (not replacements)
   useEffect(() => {
-    if (allMessages && allMessages.length > 0) {
+    const currentCount = allMessages.length;
+    const previousCount = previousMessageCountRef.current;
+
+    // Only scroll if message count increased (genuine new message)
+    if (currentCount > previousCount && currentCount > 0) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [allMessages]);
+
+    previousMessageCountRef.current = currentCount;
+  }, [allMessages.length]);
 
   // Debounced smart reply generation when new messages arrive
   useEffect(() => {
@@ -219,22 +267,23 @@ const ChatScreen = () => {
       setShowSmartReplies(false);
 
       try {
-        await sendMessage({
+        const messageId = await sendMessage({
           conversationId,
           senderId: user.id,
           content: content.trim(),
         });
 
+        // Track the mapping from temp ID to real message ID
+        setPendingMessageIds((prev) => new Map(prev).set(tempId, messageId));
+
         // Clear cached smart replies
         await clearSmartReplies({ conversationId });
 
-        // Remove optimistic message after successful send
-        setOptimisticMessages((prev) =>
-          prev.filter((msg) => msg._id !== tempId),
-        );
+        // Note: Optimistic message will be automatically removed by the cleanup effect
+        // once the real message appears in the query results
       } catch (error) {
         console.error("Failed to send message:", error);
-        // Remove failed optimistic message
+        // Remove failed optimistic message immediately
         setOptimisticMessages((prev) =>
           prev.filter((msg) => msg._id !== tempId),
         );
@@ -303,7 +352,7 @@ const ChatScreen = () => {
 
   if (!conversation || !messages || !participants) {
     return (
-      <View className="flex-1 bg-gray-900">
+      <View className="flex-1 bg-background-base">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#3D88F7" />
         </View>
@@ -312,8 +361,8 @@ const ChatScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-gray-900">
-      <Header navigation={navigation} />
+    <View className="flex-1 bg-background-base">
+      <Header navigation={navigation} title={displayName} />
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -333,15 +382,20 @@ const ChatScreen = () => {
             />
           )}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
+          contentContainerStyle={
+            allMessages.length === 0
+              ? { flexGrow: 1 }
+              : { padding: 16, paddingBottom: 8 }
+          }
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: false })
           }
-          className="flex-1 bg-gray-900"
+          className="flex-1 bg-background-base"
           ListEmptyComponent={
-            <View className="flex-1 justify-center items-center py-20">
-              <Text className="text-sm text-gray-400">No messages yet</Text>
-              <Text className="text-xs mt-2 text-gray-500">
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>💬</Text>
+              <Text style={styles.emptyTitle}>No messages yet</Text>
+              <Text style={styles.emptySubtitle}>
                 Send a message to start the conversation
               </Text>
             </View>
@@ -374,7 +428,7 @@ const ChatScreen = () => {
         )}
 
         {/* Message Input */}
-        <SafeAreaView edges={["bottom"]} className="bg-gray-800">
+        <SafeAreaView edges={["bottom"]}>
           <MessageInput
             ref={messageInputRef}
             onSend={handleSendMessage}
@@ -386,5 +440,30 @@ const ChatScreen = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#F9FAFB",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+});
 
 export default ChatScreen;

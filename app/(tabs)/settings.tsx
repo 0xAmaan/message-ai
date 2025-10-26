@@ -14,36 +14,45 @@ const SettingsScreen = () => {
     "User";
 
   return (
-    <View className="flex-1 bg-gray-900">
-      <SafeAreaView edges={["top"]}>
-        <View className="p-5 bg-gray-800 border-b border-gray-700">
-          <Text className="text-2xl font-bold text-gray-50">Settings</Text>
-        </View>
-      </SafeAreaView>
+    <View className="flex-1 bg-background-base">
+      <View className="bg-background">
+        <SafeAreaView edges={["top"]}>
+          <View className="flex-row items-center justify-between px-5 py-3 bg-background">
+            <View className="w-12" />
+            <Text className="text-xl font-bold text-gray-50">Settings</Text>
+            <View className="w-12" />
+          </View>
+        </SafeAreaView>
+      </View>
 
       <ScrollView className="flex-1">
         {/* Profile Section */}
-        <View className="bg-gray-800 border-b border-gray-700 p-5">
+        <View className="bg-background-base border-b border-gray-700 p-5">
           <Text className="text-sm text-gray-400 mb-3">PROFILE</Text>
-          <View className="flex-row items-center">
-            {/* Profile Picture */}
-            <View className="w-16 h-16 rounded-full bg-primary justify-center items-center mr-4">
-              <Text className="text-2xl font-semibold text-gray-50">
-                {userIdentifier.charAt(0).toUpperCase()}
-              </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center flex-1">
+              {/* Profile Picture */}
+              <View className="w-16 h-16 rounded-full bg-primary justify-center items-center mr-4">
+                <Text className="text-2xl font-semibold text-gray-50">
+                  {userIdentifier.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+
+              {/* User Info */}
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-gray-50 mb-1">
+                  {userIdentifier}
+                </Text>
+                {user?.primaryPhoneNumber?.phoneNumber && (
+                  <Text className="text-sm text-gray-400">
+                    {user.primaryPhoneNumber.phoneNumber}
+                  </Text>
+                )}
+              </View>
             </View>
 
-            {/* User Info */}
-            <View className="flex-1">
-              <Text className="text-lg font-bold text-gray-50 mb-1">
-                {userIdentifier}
-              </Text>
-              {user?.primaryPhoneNumber?.phoneNumber && (
-                <Text className="text-sm text-gray-400">
-                  {user.primaryPhoneNumber.phoneNumber}
-                </Text>
-              )}
-            </View>
+            {/* Logout Button */}
+            <SignOutButton />
           </View>
         </View>
 
@@ -52,7 +61,7 @@ const SettingsScreen = () => {
           <Text className="text-sm text-gray-400 px-5 mb-2">PREFERENCES</Text>
 
           <TouchableOpacity
-            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            className="flex-row items-center p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
@@ -69,7 +78,7 @@ const SettingsScreen = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            className="flex-row items-center p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
@@ -86,7 +95,7 @@ const SettingsScreen = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            className="flex-row items-center p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
@@ -103,7 +112,7 @@ const SettingsScreen = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            className="flex-row items-center p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
@@ -118,11 +127,6 @@ const SettingsScreen = () => {
               </Text>
             </View>
           </TouchableOpacity>
-        </View>
-
-        {/* Sign Out Button */}
-        <View className="mt-8 px-5 pb-8">
-          <SignOutButton />
         </View>
       </ScrollView>
     </View>

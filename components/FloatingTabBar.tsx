@@ -30,7 +30,7 @@ export const FloatingTabBar = ({
       tension: 68,
       friction: 12,
     }).start();
-  }, [state.index]);
+  }, [state.index, indicatorPosition]);
 
   return (
     <View

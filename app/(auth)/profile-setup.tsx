@@ -109,7 +109,7 @@ const ProfileSetupScreen = () => {
   };
 
   return (
-    <View className="flex-1 p-5 bg-gray-900 items-center">
+    <View className="flex-1 p-5 bg-background-base items-center">
       <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
         Complete Your Profile
       </Text>

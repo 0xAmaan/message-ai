@@ -1,7 +1,7 @@
 import { useClerk } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
 import { LogOut } from "lucide-react-native";
-import { TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function
@@ -18,13 +18,21 @@ export const SignOutButton = () => {
     }
   };
   return (
-    <TouchableOpacity
-      onPress={handleSignOut}
-      className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center active:opacity-80"
-      style={{ backgroundColor: '#374151' }}
-      activeOpacity={0.7}
-    >
-      <LogOut color="#F9FAFB" size={20} strokeWidth={2} />
+    <TouchableOpacity onPress={handleSignOut} activeOpacity={0.7}>
+      <View style={styles.button}>
+        <LogOut color="#F9FAFB" size={20} strokeWidth={2} />
+      </View>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#8D2A2A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

@@ -83,7 +83,7 @@ export const ChatListItem = ({
 
   if (!participants) {
     return (
-      <View className="flex-row p-4 bg-gray-800 border-b border-gray-700">
+      <View className="flex-row p-4 bg-background-base border-b border-gray-700">
         <View
           className="w-12 h-12 rounded-full justify-center items-center mr-3"
           style={{ backgroundColor: "#3D88F7" }}
@@ -101,7 +101,7 @@ export const ChatListItem = ({
 
   return (
     <TouchableOpacity
-      className="flex-row p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+      className="flex-row p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
       onPress={handlePress}
       activeOpacity={0.7}
     >
@@ -115,7 +115,7 @@ export const ChatListItem = ({
           {displayName.charAt(0).toUpperCase()}
         </Text>
         {otherUser?.isOnline && (
-          <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
+          <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background-base" />
         )}
       </View>
 
@@ -123,17 +123,17 @@ export const ChatListItem = ({
       <View className="flex-1 justify-center">
         <View className="flex-row justify-between items-center mb-1">
           <Text
-            className="text-base font-semibold flex-1 text-gray-50"
+            className="text-lg font-semibold flex-1 text-gray-50"
             numberOfLines={1}
           >
             {displayName}
           </Text>
-          <Text className="text-xs ml-2 text-gray-400">
+          <Text className="text-sm ml-2 text-gray-400">
             {formatTime(conversation.lastMessageAt)}
           </Text>
         </View>
 
-        <Text className="text-sm text-gray-400" numberOfLines={2}>
+        <Text className="text-base text-gray-400" numberOfLines={2}>
           {lastMessage?.senderId === currentUserId && "You: "}
           {lastMessageText}
         </Text>

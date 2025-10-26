@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -82,14 +83,38 @@ const NewChatScreen = () => {
       : []
     : allUsers?.filter((u) => u.clerkId !== user?.id) || [];
 
+  // Helper function to format phone number
+  const formatPhoneNumber = (phoneNumber: string) => {
+    // Remove all non-digits
+    const cleaned = phoneNumber.replace(/\D/g, "");
+
+    // Format as (XXX) XXX-XXXX for US numbers
+    if (cleaned.length === 11 && cleaned.startsWith("1")) {
+      // Remove country code
+      const withoutCountry = cleaned.slice(1);
+      return `(${withoutCountry.slice(0, 3)}) ${withoutCountry.slice(3, 6)}-${withoutCountry.slice(6)}`;
+    } else if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+
+    // Return original if not a standard US format
+    return phoneNumber;
+  };
+
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (str: string) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   return (
-    <View className="flex-1 bg-gray-900">
+    <View className="flex-1 bg-background-base">
       <Header navigation={navigation} />
 
       {/* Search Input */}
-      <View className="p-4 bg-gray-800 border-b border-gray-700">
+      <View className="p-4 bg-background border-b border-gray-700">
         <TextInput
-          className="bg-gray-700 rounded-lg px-4 py-3 text-base mb-2 text-gray-50"
+          className="bg-background-base rounded-lg px-4 py-3 text-base mb-2 text-gray-50"
           placeholder="Search by phone number (+1234567890)"
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
@@ -105,13 +130,13 @@ const NewChatScreen = () => {
 
       {/* Create Chat Button */}
       {selectedUsers.length > 0 && (
-        <View className="p-4 bg-gray-800 border-b border-gray-700">
+        <View className="p-4 bg-background border-b border-gray-700">
           <TouchableOpacity
-            className="py-3 rounded-lg active:opacity-80"
-            style={{ backgroundColor: "#3D88F7" }}
+            style={styles.startChatButton}
             onPress={handleCreateChat}
+            activeOpacity={0.8}
           >
-            <Text className="text-center font-semibold text-base text-gray-50">
+            <Text style={styles.startChatButtonText}>
               {selectedUsers.length === 1
                 ? "Start Chat"
                 : `Create Group (${selectedUsers.length + 1} people)`}
@@ -144,52 +169,38 @@ const NewChatScreen = () => {
             const isSelected = selectedUsers.includes(item.clerkId);
             return (
               <TouchableOpacity
-                className={`flex-row items-center p-4 border-b border-gray-700 active:bg-gray-700`}
-                style={{
-                  backgroundColor: isSelected
-                    ? "rgba(61, 136, 247, 0.2)"
-                    : "#1A1A1A",
-                }}
+                className="flex-row items-center p-4 border-b border-gray-700 bg-background-base active:bg-gray-900"
                 onPress={() => handleToggleUser(item.clerkId)}
                 activeOpacity={0.7}
               >
-                {/* Selection indicator */}
-                <View
-                  className={`w-6 h-6 rounded-full border-2 mr-3 justify-center items-center ${
-                    isSelected ? "" : "border-gray-600"
-                  }`}
-                  style={
-                    isSelected
-                      ? { backgroundColor: "#3D88F7", borderColor: "#3D88F7" }
-                      : {}
-                  }
-                >
+                {/* Profile Picture with selection indicator overlay */}
+                <View style={styles.profilePictureContainer}>
+                  <View style={styles.profilePicture}>
+                    <Text style={styles.profileInitial}>
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  {/* Online Indicator */}
+                  {item.isOnline && <View style={styles.onlineIndicator} />}
+                  {/* Selection indicator overlay */}
                   {isSelected && (
-                    <Text className="text-xs font-bold text-gray-50">✓</Text>
+                    <View style={styles.selectionOverlay}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
                   )}
                 </View>
 
-                <View
-                  className="w-12 h-12 rounded-full justify-center items-center mr-3 relative"
-                  style={{ backgroundColor: "#3D88F7" }}
-                >
-                  <Text className="text-xl font-semibold text-gray-50">
-                    {item.name.charAt(0).toUpperCase()}
-                  </Text>
-                  {item.isOnline && (
-                    <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-gray-800" />
-                  )}
-                </View>
-
+                {/* User Info */}
                 <View className="flex-1">
-                  <Text className="text-base font-semibold mb-1 text-gray-50">
-                    {item.name}
+                  <Text className="text-lg font-semibold mb-1 text-gray-50">
+                    {capitalizeFirstLetter(item.name)}
                   </Text>
-                  <Text className="text-sm text-gray-400">
-                    {item.phoneNumber}
+                  <Text className="text-base text-gray-400">
+                    {formatPhoneNumber(item.phoneNumber)}
                   </Text>
                 </View>
 
+                {/* Online Badge */}
                 {item.isOnline && (
                   <View className="bg-emerald-500 px-2 py-1 rounded-xl">
                     <Text className="text-xs font-semibold text-gray-50">
@@ -201,11 +212,75 @@ const NewChatScreen = () => {
             );
           }}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ paddingVertical: 8 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          className="flex-1 bg-background-base"
         />
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  // Start Chat Button
+  startChatButton: {
+    backgroundColor: "#3D88F7",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  startChatButtonText: {
+    color: "#F9FAFB",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // Profile Picture Container
+  profilePictureContainer: {
+    width: 40,
+    height: 40,
+    marginRight: 16,
+    position: "relative",
+  },
+  profilePicture: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#7C3AED",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileInitial: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#F9FAFB",
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#1F2937",
+  },
+  selectionOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 20,
+    backgroundColor: "rgba(61, 136, 247, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkmark: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#F9FAFB",
+  },
+});
 
 export default NewChatScreen;

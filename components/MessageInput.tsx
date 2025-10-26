@@ -1,7 +1,14 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
-import { Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePlus } from "lucide-react-native";
+import { forwardRef, useImperativeHandle, useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -27,94 +34,143 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       },
     }));
 
-  const handleTextChange = (text: string) => {
-    setMessage(text);
-    // Notify parent when user starts/stops typing
-    if (onTypingChange) {
-      onTypingChange(text.length > 0);
-    }
-  };
-
-  const handleSend = () => {
-    if (message.trim()) {
-      onSend(message);
-      setMessage("");
-      // User stopped typing after sending
+    const handleTextChange = (text: string) => {
+      setMessage(text);
+      // Notify parent when user starts/stops typing
       if (onTypingChange) {
-        onTypingChange(false);
+        onTypingChange(text.length > 0);
       }
-    }
-  };
+    };
 
-  const handlePickImage = async () => {
-    try {
-      // Request permissions
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission needed",
-          "Please allow access to your photo library to send images.",
-        );
-        return;
-      }
-
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        if (onSendImage) {
-          onSendImage(imageUri);
+    const handleSend = () => {
+      if (message.trim()) {
+        onSend(message);
+        setMessage("");
+        // User stopped typing after sending
+        if (onTypingChange) {
+          onTypingChange(false);
         }
       }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
-    }
-  };
+    };
 
-  return (
-    <View className="flex-row p-2 bg-gray-800 border-t border-gray-700 items-end">
-      {/* Image picker button */}
-      <TouchableOpacity
-        className="w-10 h-10 rounded-full justify-center items-center mr-2 bg-gray-700 active:bg-gray-600"
-        onPress={handlePickImage}
-      >
-        <ImagePlus color="#9CA3AF" size={20} />
-      </TouchableOpacity>
+    const handlePickImage = async () => {
+      try {
+        // Request permissions
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      <View className="flex-1 bg-gray-700 rounded-3xl px-4 py-2 mr-2 min-h-[40px] max-h-[100px]">
-        <TextInput
-          className="text-base min-h-[24px] text-gray-50"
-          placeholder="Message"
-          placeholderTextColor="#9CA3AF"
-          value={message}
-          onChangeText={handleTextChange}
-          multiline
-          maxLength={1000}
-        />
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission needed",
+            "Please allow access to your photo library to send images.",
+          );
+          return;
+        }
+
+        // Launch image picker
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsEditing: true,
+          quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          const imageUri = result.assets[0].uri;
+          if (onSendImage) {
+            onSendImage(imageUri);
+          }
+        }
+      } catch (error) {
+        console.error("Error picking image:", error);
+        Alert.alert("Error", "Failed to pick image. Please try again.");
+      }
+    };
+
+    return (
+      <View style={styles.container}>
+        {/* Image picker button */}
+        <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7}>
+          <View style={styles.iconButton}>
+            <ImagePlus color="#9CA3AF" size={20} />
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Message"
+            placeholderTextColor="#9CA3AF"
+            value={message}
+            onChangeText={handleTextChange}
+            multiline
+            maxLength={1000}
+          />
+        </View>
+
+        <TouchableOpacity
+          onPress={handleSend}
+          disabled={!message.trim()}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: message.trim() ? "#3D88F7" : "#1a1a1a",
+                opacity: message.trim() ? 1 : 1,
+              },
+            ]}
+          >
+            <Text style={styles.sendButtonText}>↑</Text>
+          </View>
+        </TouchableOpacity>
       </View>
+    );
+  },
+);
 
-      <TouchableOpacity
-        className={`w-10 h-10 rounded-full justify-center items-center ${
-          message.trim()
-            ? "active:opacity-80"
-            : "bg-gray-600 opacity-50"
-        }`}
-        style={message.trim() ? { backgroundColor: '#3D88F7' } : {}}
-        onPress={handleSend}
-        disabled={!message.trim()}
-      >
-        <Text className="text-xl font-bold text-gray-50">
-          ↑
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1A1A1A",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  inputContainer: {
+    flex: 1,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 8,
+    minHeight: 40,
+    maxHeight: 100,
+    justifyContent: "center",
+  },
+  textInput: {
+    fontSize: 16,
+    color: "#F9FAFB",
+    minHeight: 24,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendButtonText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#F9FAFB",
+  },
 });

@@ -13,6 +13,7 @@
 @theme inline {
   --color-background-base: #000000; /* pure black */
   --color-background: #1a1a1a; /* lighter dark */
+  --color-foreground: #f9fafb; /* lighter dark */
 
   /* Glass morphism colors */
   --color-glass-bg: rgba(26, 26, 26, 0.7);

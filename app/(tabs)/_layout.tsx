@@ -6,7 +6,7 @@ import { FloatingTabBar } from "@/components/FloatingTabBar";
 const TabsLayout = () => {
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="#1A1A1A" />
       <Tabs
         tabBar={(props) => <FloatingTabBar {...props} />}
         screenOptions={{

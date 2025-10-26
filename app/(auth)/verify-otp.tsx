@@ -1,5 +1,6 @@
+import Header from "@/components/Header";
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -7,6 +8,7 @@ const VerifyOTPScreen = () => {
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -136,25 +138,22 @@ const VerifyOTPScreen = () => {
   };
 
   return (
-    <View className="flex-1 p-5 bg-gray-900">
-      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
+    <View className="flex-1 bg-background-base">
+      <Header navigation={navigation} title="MessageAI" />
+      <View className="flex-1 p-5">
+      <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50 text-center">
         {isSigningUp ? "Verify Your Phone" : "Welcome Back"}
       </Text>
-      <Text className="text-base text-gray-400 mb-10">
+      <Text className="text-base text-gray-400 mb-10 text-center">
         Enter the 6-digit code sent to{"\n"}
         {phoneNumber}
       </Text>
-      {!isSigningUp && (
-        <Text className="text-sm text-violet-400 mb-5">
-          Signing you back in...
-        </Text>
-      )}
 
       <View className="mb-8">
         <Text className="text-base font-semibold mb-2 text-gray-50">
           Verification Code
         </Text>
-        <View className="border border-gray-700 bg-gray-800 rounded-lg p-4">
+        <View className="border border-gray-700 bg-background rounded-lg p-4">
           <TextInput
             style={{
               fontSize: 24,
@@ -173,22 +172,26 @@ const VerifyOTPScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity
-        className="bg-violet-600 p-4 rounded-lg items-center mb-5"
-        style={{ opacity: loading || code.length !== 6 ? 0.6 : 1 }}
-        onPress={handleVerify}
-        disabled={loading || code.length !== 6}
-      >
-        <Text className="text-gray-50 text-base font-semibold">
-          {loading ? "Verifying..." : "Verify"}
-        </Text>
-      </TouchableOpacity>
+      <View className="items-center">
+        <TouchableOpacity
+          className={`p-4 rounded-lg items-center w-40 mb-5 ${
+            loading || code.length !== 6 ? "bg-gray-700" : "bg-primary"
+          }`}
+          onPress={handleVerify}
+          disabled={loading || code.length !== 6}
+        >
+          <Text className="text-gray-50 text-base font-semibold">
+            {loading ? "Verifying..." : "Verify"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity onPress={handleResend} className="items-center">
-        <Text className="text-violet-400 text-sm">
+        <Text className="text-primary text-sm">
           Didn&apos;t receive code? Resend
         </Text>
       </TouchableOpacity>
+      </View>
     </View>
   );
 };

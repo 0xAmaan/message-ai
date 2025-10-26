@@ -1,25 +1,28 @@
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 const AuthRoutesLayout = () => {
   // No redirect logic here - the root layout handles all routing
   // This allows the auth flow to complete without interference
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "#1F2937" },
-        headerTintColor: "#F9FAFB", // gray-50
-        // headerTitleStyle: { fontWeight: "bold" },
-        contentStyle: { backgroundColor: "#111827" }, // gray-900
-      }}
-    >
+    <>
+      <StatusBar style="light" backgroundColor="#1A1A1A" />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: "#1A1A1A" },
+          headerTintColor: "#F9FAFB", // gray-50
+          // headerTitleStyle: { fontWeight: "bold" },
+          contentStyle: { backgroundColor: "#000000" }, // background-base
+        }}
+      >
       <Stack.Screen
         name="phone-input"
-        options={{ title: "Enter Phone Number", headerShown: true }}
+        options={{ title: "MessageAI", headerShown: true }}
       />
       <Stack.Screen
         name="verify-otp"
-        options={{ title: "Verify Code", headerShown: true }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="username-setup"
@@ -37,7 +40,8 @@ const AuthRoutesLayout = () => {
           headerBackVisible: false,
         }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 };
 

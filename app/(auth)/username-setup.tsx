@@ -142,7 +142,7 @@ const UsernameSetupScreen = () => {
   };
 
   return (
-    <View className="flex-1 p-5 bg-gray-900">
+    <View className="flex-1 p-5 bg-background-base">
       <Text className="text-3xl font-bold mt-10 mb-2 text-gray-50">
         Choose Your Username
       </Text>
