@@ -4,7 +4,7 @@ import { Bell, Lock, Moon, User } from "lucide-react-native";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function SettingsScreen() {
+const SettingsScreen = () => {
   const { user } = useUser();
 
   const userIdentifier =
@@ -27,7 +27,7 @@ export default function SettingsScreen() {
           <Text className="text-sm text-gray-400 mb-3">PROFILE</Text>
           <View className="flex-row items-center">
             {/* Profile Picture */}
-            <View className="w-16 h-16 rounded-full bg-violet-600 justify-center items-center mr-4">
+            <View className="w-16 h-16 rounded-full justify-center items-center mr-4" style={{ backgroundColor: '#3D88F7' }}>
               <Text className="text-2xl font-semibold text-gray-50">
                 {userIdentifier.charAt(0).toUpperCase()}
               </Text>
@@ -56,7 +56,7 @@ export default function SettingsScreen() {
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
-              <User color="#8B5CF6" size={20} strokeWidth={2} />
+              <User color="#3D88F7" size={20} strokeWidth={2} />
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-50 mb-0.5">
@@ -73,7 +73,7 @@ export default function SettingsScreen() {
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
-              <Bell color="#8B5CF6" size={20} strokeWidth={2} />
+              <Bell color="#3D88F7" size={20} strokeWidth={2} />
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-50 mb-0.5">
@@ -90,7 +90,7 @@ export default function SettingsScreen() {
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
-              <Lock color="#8B5CF6" size={20} strokeWidth={2} />
+              <Lock color="#3D88F7" size={20} strokeWidth={2} />
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-50 mb-0.5">
@@ -107,7 +107,7 @@ export default function SettingsScreen() {
             activeOpacity={0.7}
           >
             <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
-              <Moon color="#8B5CF6" size={20} strokeWidth={2} />
+              <Moon color="#3D88F7" size={20} strokeWidth={2} />
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-50 mb-0.5">
@@ -127,4 +127,6 @@ export default function SettingsScreen() {
       </ScrollView>
     </View>
   );
-}
+};
+
+export default SettingsScreen;

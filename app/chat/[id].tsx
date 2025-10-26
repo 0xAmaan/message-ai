@@ -36,7 +36,7 @@ interface OptimisticMessage {
   isPending?: boolean;
 }
 
-export default function ChatScreen() {
+const ChatScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useUser();
   const flatListRef = useRef<FlatList>(null);
@@ -299,7 +299,7 @@ export default function ChatScreen() {
     return (
       <View className="flex-1 bg-gray-900">
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#8B5CF6" />
+          <ActivityIndicator size="large" color="#3D88F7" />
         </View>
       </View>
     );
@@ -379,4 +379,6 @@ export default function ChatScreen() {
       </KeyboardAvoidingView>
     </View>
   );
-}
+};
+
+export default ChatScreen;

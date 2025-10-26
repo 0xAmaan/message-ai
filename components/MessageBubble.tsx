@@ -22,12 +22,12 @@ interface MessageBubbleProps {
   currentUserId?: string; // For translation feature
 }
 
-export function MessageBubble({
+export const MessageBubble = ({
   message,
   isOwnMessage,
   isPending,
   currentUserId,
-}: MessageBubbleProps) {
+}: MessageBubbleProps) => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [localTranslation, setLocalTranslation] = useState<{
@@ -180,9 +180,10 @@ export function MessageBubble({
         <View
           className={`${message.imageId ? "px-0 py-0" : "px-3 py-2"} rounded-lg ${
             isOwnMessage
-              ? "bg-violet-600 rounded-br-sm"
+              ? "rounded-br-sm"
               : "bg-gray-700 rounded-bl-sm"
           }`}
+          style={isOwnMessage ? { backgroundColor: '#3D88F7' } : {}}
         >
           {/* Image if present */}
           {message.imageId && (
@@ -202,7 +203,7 @@ export function MessageBubble({
                     alignItems: "center",
                   }}
                 >
-                  <ActivityIndicator size="small" color="#8B5CF6" />
+                  <ActivityIndicator size="small" color="#3D88F7" />
                 </View>
               )}
             </View>
@@ -254,16 +255,16 @@ export function MessageBubble({
             : localTranslation!.slangExplanations;
 
           return (
-            <View className="mt-2 px-4 py-3 rounded-lg bg-violet-950">
+            <View className="mt-2 px-4 py-3 rounded-lg" style={{ backgroundColor: 'rgba(61, 136, 247, 0.15)' }}>
               {/* Language indicator */}
               <View className="flex-row items-center mb-3">
-                <Text className="text-xs font-medium text-violet-300">
+                <Text className="text-xs font-medium text-blue-300">
                   {getFlagEmoji(detectedLang)} {detectedLang} → 🇺🇸 English
                 </Text>
               </View>
 
               {/* Divider */}
-              <View className="h-px mb-3 bg-violet-900" />
+              <View className="h-px mb-3" style={{ backgroundColor: 'rgba(61, 136, 247, 0.3)' }} />
 
               {/* Translated text */}
               <Text className="text-base leading-6 mb-1 text-gray-50">
@@ -272,7 +273,7 @@ export function MessageBubble({
 
               {/* Cultural hints */}
               {culturalHints.length > 0 && (
-                <View className="mt-3 pt-3 border-t border-violet-900">
+                <View className="mt-3 pt-3" style={{ borderTopWidth: 1, borderTopColor: 'rgba(61, 136, 247, 0.3)' }}>
                   <Text className="text-xs font-semibold mb-2 text-blue-300">
                     ℹ️ Cultural Context:
                   </Text>
@@ -289,7 +290,7 @@ export function MessageBubble({
 
               {/* Slang explanations */}
               {slangExplanations.length > 0 && (
-                <View className="mt-3 pt-3 border-t border-violet-900">
+                <View className="mt-3 pt-3" style={{ borderTopWidth: 1, borderTopColor: 'rgba(61, 136, 247, 0.3)' }}>
                   <Text className="text-xs font-semibold mb-2 text-yellow-400">
                     📚 Slang & Idioms:
                   </Text>
@@ -320,4 +321,4 @@ export function MessageBubble({
       </View>
     </View>
   );
-}
+};

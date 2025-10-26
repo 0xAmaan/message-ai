@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-export default function NewChatScreen() {
+const NewChatScreen = () => {
   const { user } = useUser();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,7 +102,8 @@ export default function NewChatScreen() {
       {selectedUsers.length > 0 && (
         <View className="p-4 bg-gray-800 border-b border-gray-700">
           <TouchableOpacity
-            className="bg-violet-600 py-3 rounded-lg active:bg-violet-700"
+            className="py-3 rounded-lg active:opacity-80"
+            style={{ backgroundColor: '#3D88F7' }}
             onPress={handleCreateChat}
           >
             <Text className="text-center font-semibold text-base text-gray-50">
@@ -117,7 +118,7 @@ export default function NewChatScreen() {
       {/* User List */}
       {displayUsers === undefined ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#8B5CF6" />
+          <ActivityIndicator size="large" color="#3D88F7" />
         </View>
       ) : displayUsers.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
@@ -138,9 +139,8 @@ export default function NewChatScreen() {
             const isSelected = selectedUsers.includes(item.clerkId);
             return (
               <TouchableOpacity
-                className={`flex-row items-center p-4 border-b border-gray-700 active:bg-gray-700 ${
-                  isSelected ? "bg-violet-900" : "bg-gray-800"
-                }`}
+                className={`flex-row items-center p-4 border-b border-gray-700 active:bg-gray-700`}
+                style={{ backgroundColor: isSelected ? 'rgba(61, 136, 247, 0.2)' : '#1A1A1A' }}
                 onPress={() => handleToggleUser(item.clerkId)}
                 activeOpacity={0.7}
               >
@@ -148,16 +148,17 @@ export default function NewChatScreen() {
                 <View
                   className={`w-6 h-6 rounded-full border-2 mr-3 justify-center items-center ${
                     isSelected
-                      ? "bg-violet-600 border-violet-600"
+                      ? ""
                       : "border-gray-600"
                   }`}
+                  style={isSelected ? { backgroundColor: '#3D88F7', borderColor: '#3D88F7' } : {}}
                 >
                   {isSelected && (
                     <Text className="text-xs font-bold text-gray-50">✓</Text>
                   )}
                 </View>
 
-                <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative">
+                <View className="w-12 h-12 rounded-full justify-center items-center mr-3 relative" style={{ backgroundColor: '#3D88F7' }}>
                   <Text className="text-xl font-semibold text-gray-50">
                     {item.name.charAt(0).toUpperCase()}
                   </Text>
@@ -191,4 +192,6 @@ export default function NewChatScreen() {
       )}
     </View>
   );
-}
+};
+
+export default NewChatScreen;

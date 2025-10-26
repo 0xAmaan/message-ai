@@ -1,28 +1,35 @@
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { MessageCircle, Settings, Users } from "lucide-react-native";
+import { CircleUser, MessageCircle, Settings } from "lucide-react-native";
+import { BlurView } from "expo-blur";
 
-export default function TabsLayout() {
+const TabsLayout = () => {
   return (
     <>
       <StatusBar style="light" />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: "#8B5CF6", // violet-500
+          tabBarActiveTintColor: "#3D88F7", // blue
           tabBarInactiveTintColor: "#9CA3AF", // gray-400
           tabBarStyle: {
-            backgroundColor: "#1A1A1A", // lighter dark gray
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: "#1A1A1A",
             borderTopWidth: 1,
-            borderTopColor: "#1A1A1A", // lighter dark gray
+            borderTopColor: "rgba(255, 255, 255, 0.1)",
+            height: 85,
+            paddingBottom: 25,
           },
           headerStyle: {
-            backgroundColor: "#1A1A1A", // lighter dark gray
+            backgroundColor: "#1A1A1A",
           },
-          headerTintColor: "#F9FAFB", // gray-50
+          headerTintColor: "#F9FAFB",
           headerTitleStyle: {
             fontWeight: "bold",
           },
-          headerShown: false, // We handle headers in individual screens
+          headerShown: false,
         }}
       >
         <Tabs.Screen
@@ -30,7 +37,7 @@ export default function TabsLayout() {
           options={{
             title: "Contacts",
             tabBarIcon: ({ color, size }) => (
-              <Users color={color} size={size} strokeWidth={2} />
+              <CircleUser color={color} size={size} strokeWidth={2} />
             ),
           }}
         />
@@ -55,4 +62,6 @@ export default function TabsLayout() {
       </Tabs>
     </>
   );
-}
+};
+
+export default TabsLayout;

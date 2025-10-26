@@ -12,12 +12,12 @@ interface SmartReplyChipsProps {
   onDismiss: () => void;
 }
 
-export function SmartReplyChips({
+export const SmartReplyChips = ({
   conversationId,
   currentUserId,
   onSelectReply,
   onDismiss,
-}: SmartReplyChipsProps) {
+}: SmartReplyChipsProps) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
@@ -91,10 +91,15 @@ export function SmartReplyChips({
             <TouchableOpacity
               key={index}
               onPress={() => handleSelectReply(suggestion)}
-              className="flex-1 bg-violet-900/30 border border-violet-600/50 rounded-full py-2 px-3 active:bg-violet-900/50"
+              className="flex-1 rounded-full py-2 px-3 active:opacity-80"
+              style={{
+                backgroundColor: 'rgba(61, 136, 247, 0.2)',
+                borderWidth: 1,
+                borderColor: 'rgba(61, 136, 247, 0.5)'
+              }}
             >
               <Text
-                className="text-sm text-center text-violet-300"
+                className="text-sm text-center text-blue-300"
                 numberOfLines={1}
               >
                 {suggestion}
@@ -105,10 +110,10 @@ export function SmartReplyChips({
       </Animated.View>
     </View>
   );
-}
+};
 
 // Loading shimmer component for when suggestions are being generated
-export function SmartReplyChipsLoading() {
+export const SmartReplyChipsLoading = () => {
   const [shimmerAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -152,4 +157,4 @@ export function SmartReplyChipsLoading() {
       </View>
     </View>
   );
-}
+};

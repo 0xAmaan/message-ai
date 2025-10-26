@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function AuthRoutesLayout() {
+const AuthRoutesLayout = () => {
   // No redirect logic here - the root layout handles all routing
   // This allows the auth flow to complete without interference
 
@@ -39,4 +39,6 @@ export default function AuthRoutesLayout() {
       />
     </Stack>
   );
-}
+};
+
+export default AuthRoutesLayout;

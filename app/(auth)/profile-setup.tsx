@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 
-export default function ProfileSetupScreen() {
+const ProfileSetupScreen = () => {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [name, setName] = useState("");
@@ -169,4 +169,6 @@ export default function ProfileSetupScreen() {
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default ProfileSetupScreen;

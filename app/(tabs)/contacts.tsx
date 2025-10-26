@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ContactsScreen() {
+const ContactsScreen = () => {
   const { user } = useUser();
   const router = useRouter();
 
@@ -59,7 +59,7 @@ export default function ContactsScreen() {
       {/* Loading State */}
       {allUsers === undefined ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#8B5CF6" />
+          <ActivityIndicator size="large" color="#3D88F7" />
         </View>
       ) : contacts.length === 0 ? (
         // Empty State
@@ -83,7 +83,7 @@ export default function ContactsScreen() {
               activeOpacity={0.7}
             >
               {/* Profile Picture */}
-              <View className="w-14 h-14 rounded-full bg-violet-600 justify-center items-center mr-4 relative">
+              <View className="w-14 h-14 rounded-full justify-center items-center mr-4 relative" style={{ backgroundColor: '#3D88F7' }}>
                 <Text className="text-xl font-semibold text-gray-50">
                   {item.name.charAt(0).toUpperCase()}
                 </Text>
@@ -120,4 +120,6 @@ export default function ContactsScreen() {
       )}
     </View>
   );
-}
+};
+
+export default ContactsScreen;

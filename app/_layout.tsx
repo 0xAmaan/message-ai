@@ -17,13 +17,17 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
 
-function RootLayoutNav() {
+const RootLayoutNav = () => {
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
+  const responseListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
   const updateOnlineStatus = useMutation(api.users.updateOnlineStatus);
 
   // Update online status based on app state
@@ -143,22 +147,10 @@ function RootLayoutNav() {
       />
     </Stack>
   );
-}
+};
 
-export default function RootLayout() {
+const RootLayout = () => {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-
-  if (!publishableKey) {
-    throw new Error(
-      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env",
-    );
-  }
-
-  if (!process.env.EXPO_PUBLIC_CONVEX_URL) {
-    throw new Error(
-      "Missing Convex URL. Please set EXPO_PUBLIC_CONVEX_URL in your .env",
-    );
-  }
 
   return (
     <SafeAreaProvider>
@@ -169,4 +161,6 @@ export default function RootLayout() {
       </ClerkProvider>
     </SafeAreaProvider>
   );
-}
+};
+
+export default RootLayout;

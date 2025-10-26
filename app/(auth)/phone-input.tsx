@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-export default function PhoneInputScreen() {
+const PhoneInputScreen = () => {
   const { signUp, isLoaded: signUpLoaded } = useSignUp();
   const { signIn, isLoaded: signInLoaded } = useSignIn();
   const router = useRouter();
@@ -132,4 +132,6 @@ export default function PhoneInputScreen() {
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default PhoneInputScreen;

@@ -15,10 +15,10 @@ interface ChatListItemProps {
   currentUserId: string;
 }
 
-export function ChatListItem({
+export const ChatListItem = ({
   conversation,
   currentUserId,
-}: ChatListItemProps) {
+}: ChatListItemProps) => {
   const router = useRouter();
 
   // Get the other participant(s) details
@@ -84,7 +84,10 @@ export function ChatListItem({
   if (!participants) {
     return (
       <View className="flex-row p-4 bg-gray-800 border-b border-gray-700">
-        <View className="w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3">
+        <View
+          className="w-12 h-12 rounded-full justify-center items-center mr-3"
+          style={{ backgroundColor: "#3D88F7" }}
+        >
           <Text className="text-xl font-semibold text-gray-50">...</Text>
         </View>
         <View className="flex-1 justify-center">
@@ -104,7 +107,9 @@ export function ChatListItem({
     >
       {/* Avatar */}
       <View
-        className={`w-12 h-12 rounded-full bg-violet-600 justify-center items-center mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
+        // className="w-12 h-12 rounded-full justify-center items-center mr-3 relative"
+        // style={{ backgroundColor: "#3D88F7" }}
+        className={`w-12 h-12 rounded-full bg-primary justify-center items-center mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
       >
         <Text className="text-xl font-semibold text-gray-50">
           {displayName.charAt(0).toUpperCase()}
@@ -135,4 +140,4 @@ export function ChatListItem({
       </View>
     </TouchableOpacity>
   );
-}
+};

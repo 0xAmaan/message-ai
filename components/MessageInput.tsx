@@ -104,9 +104,10 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       <TouchableOpacity
         className={`w-10 h-10 rounded-full justify-center items-center ${
           message.trim()
-            ? "bg-violet-600 active:bg-violet-700"
+            ? "active:opacity-80"
             : "bg-gray-600 opacity-50"
         }`}
+        style={message.trim() ? { backgroundColor: '#3D88F7' } : {}}
         onPress={handleSend}
         disabled={!message.trim()}
       >

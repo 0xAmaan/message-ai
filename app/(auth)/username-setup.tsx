@@ -12,7 +12,7 @@ import {
     View,
 } from "react-native";
 
-export default function UsernameSetupScreen() {
+const UsernameSetupScreen = () => {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -183,4 +183,6 @@ export default function UsernameSetupScreen() {
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default UsernameSetupScreen;

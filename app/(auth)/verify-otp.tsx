@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-export default function VerifyOTPScreen() {
+const VerifyOTPScreen = () => {
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const router = useRouter();
@@ -191,4 +191,6 @@ export default function VerifyOTPScreen() {
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default VerifyOTPScreen;
