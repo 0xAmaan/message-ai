@@ -154,16 +154,23 @@ export default function VerifyOTPScreen() {
         <Text className="text-base font-semibold mb-2 text-gray-50">
           Verification Code
         </Text>
-        <TextInput
-          className="border border-gray-700 bg-gray-800 rounded-lg p-4 text-2xl text-center tracking-widest text-gray-50"
-          placeholder="000000"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="number-pad"
-          value={code}
-          onChangeText={setCode}
-          maxLength={6}
-          autoFocus
-        />
+        <View className="border border-gray-700 bg-gray-800 rounded-lg p-4">
+          <TextInput
+            style={{
+              fontSize: 24,
+              textAlign: "center",
+              letterSpacing: 8,
+              color: "#F9FAFB"
+            }}
+            placeholder="000000"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="number-pad"
+            value={code}
+            onChangeText={setCode}
+            maxLength={6}
+            autoFocus
+          />
+        </View>
       </View>
 
       <TouchableOpacity

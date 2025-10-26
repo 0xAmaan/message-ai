@@ -153,9 +153,7 @@ export default function NewChatScreen() {
                   }`}
                 >
                   {isSelected && (
-                    <Text className="text-xs font-bold text-gray-50">
-                      ✓
-                    </Text>
+                    <Text className="text-xs font-bold text-gray-50">✓</Text>
                   )}
                 </View>
 

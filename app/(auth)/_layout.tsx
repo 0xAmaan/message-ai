@@ -7,38 +7,26 @@ export default function AuthRoutesLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: "#1F2937", // gray-800
-        },
+        headerStyle: { backgroundColor: "#1F2937" },
         headerTintColor: "#F9FAFB", // gray-50
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
-        contentStyle: {
-          backgroundColor: "#111827", // gray-900
-        },
+        headerTitleStyle: { fontWeight: "bold" },
+        contentStyle: { backgroundColor: "#111827" }, // gray-900
       }}
     >
       <Stack.Screen
         name="phone-input"
-        options={{
-          title: "Enter Phone Number",
-          headerShown: true,
-        }}
+        options={{ title: "Enter Phone Number", headerShown: true }}
       />
       <Stack.Screen
         name="verify-otp"
-        options={{
-          title: "Verify Code",
-          headerShown: true,
-        }}
+        options={{ title: "Verify Code", headerShown: true }}
       />
       <Stack.Screen
         name="username-setup"
         options={{
           title: "Choose Username",
           headerShown: true,
-          headerBackVisible: false, // Prevent going back after OTP verification
+          headerBackVisible: false,
         }}
       />
       <Stack.Screen
@@ -46,7 +34,7 @@ export default function AuthRoutesLayout() {
         options={{
           title: "Complete Profile",
           headerShown: true,
-          headerBackVisible: false, // Prevent going back after username is set
+          headerBackVisible: false,
         }}
       />
     </Stack>

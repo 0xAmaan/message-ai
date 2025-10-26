@@ -1,0 +1,130 @@
+import { SignOutButton } from "@/components/SignOutButton";
+import { useUser } from "@clerk/clerk-expo";
+import { Bell, Lock, Moon, User } from "lucide-react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function SettingsScreen() {
+  const { user } = useUser();
+
+  const userIdentifier =
+    user?.username ||
+    user?.primaryPhoneNumber?.phoneNumber ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "User";
+
+  return (
+    <View className="flex-1 bg-gray-900">
+      <SafeAreaView edges={["top"]}>
+        <View className="p-5 bg-gray-800 border-b border-gray-700">
+          <Text className="text-2xl font-bold text-gray-50">Settings</Text>
+        </View>
+      </SafeAreaView>
+
+      <ScrollView className="flex-1">
+        {/* Profile Section */}
+        <View className="bg-gray-800 border-b border-gray-700 p-5">
+          <Text className="text-sm text-gray-400 mb-3">PROFILE</Text>
+          <View className="flex-row items-center">
+            {/* Profile Picture */}
+            <View className="w-16 h-16 rounded-full bg-violet-600 justify-center items-center mr-4">
+              <Text className="text-2xl font-semibold text-gray-50">
+                {userIdentifier.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+
+            {/* User Info */}
+            <View className="flex-1">
+              <Text className="text-lg font-bold text-gray-50 mb-1">
+                {userIdentifier}
+              </Text>
+              {user?.primaryPhoneNumber?.phoneNumber && (
+                <Text className="text-sm text-gray-400">
+                  {user.primaryPhoneNumber.phoneNumber}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Settings Options */}
+        <View className="mt-4">
+          <Text className="text-sm text-gray-400 px-5 mb-2">PREFERENCES</Text>
+
+          <TouchableOpacity
+            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
+              <User color="#8B5CF6" size={20} strokeWidth={2} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-gray-50 mb-0.5">
+                Edit Profile
+              </Text>
+              <Text className="text-sm text-gray-400">
+                Update your name and photo
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
+              <Bell color="#8B5CF6" size={20} strokeWidth={2} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-gray-50 mb-0.5">
+                Notifications
+              </Text>
+              <Text className="text-sm text-gray-400">
+                Manage notification preferences
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
+              <Lock color="#8B5CF6" size={20} strokeWidth={2} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-gray-50 mb-0.5">
+                Privacy
+              </Text>
+              <Text className="text-sm text-gray-400">
+                Control your privacy settings
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center p-4 bg-gray-800 border-b border-gray-700 active:bg-gray-700"
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 rounded-full bg-gray-700 justify-center items-center mr-4">
+              <Moon color="#8B5CF6" size={20} strokeWidth={2} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-gray-50 mb-0.5">
+                Appearance
+              </Text>
+              <Text className="text-sm text-gray-400">
+                Theme and display options
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sign Out Button */}
+        <View className="mt-8 px-5 pb-8">
+          <SignOutButton />
+        </View>
+      </ScrollView>
+    </View>
+  );
+}

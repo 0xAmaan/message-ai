@@ -1,4 +1,3 @@
-import { SignOutButton } from "@/components/SignOutButton";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
@@ -35,14 +34,11 @@ export default function ChatsScreen() {
     return (
       <View className="flex-1 bg-gray-900">
         <SafeAreaView edges={["top"]}>
-          <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-            <View>
-              <Text className="text-sm text-gray-400">Welcome back,</Text>
-              <Text className="text-xl font-bold text-gray-50 mt-1">
-                {userIdentifier}
-              </Text>
-            </View>
-            <SignOutButton />
+          <View className="p-5 bg-gray-800">
+            <Text className="text-sm text-gray-400">Welcome back,</Text>
+            <Text className="text-xl font-bold text-gray-50 mt-1">
+              {userIdentifier}
+            </Text>
           </View>
         </SafeAreaView>
         <View className="flex-1 justify-center items-center bg-gray-900">
@@ -57,14 +53,11 @@ export default function ChatsScreen() {
     return (
       <View className="flex-1 bg-gray-900">
         <SafeAreaView edges={["top"]}>
-          <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-            <View>
-              <Text className="text-sm text-gray-400">Welcome back,</Text>
-              <Text className="text-xl font-bold text-gray-50 mt-1">
-                {userIdentifier}
-              </Text>
-            </View>
-            <SignOutButton />
+          <View className="p-5 bg-gray-800">
+            <Text className="text-sm text-gray-400">Welcome back,</Text>
+            <Text className="text-xl font-bold text-gray-50 mt-1">
+              {userIdentifier}
+            </Text>
           </View>
         </SafeAreaView>
 
@@ -93,14 +86,11 @@ export default function ChatsScreen() {
   return (
     <View className="flex-1 bg-gray-900">
       <SafeAreaView edges={["top"]}>
-        <View className="flex-row justify-between items-center p-5 bg-gray-800 border-b border-gray-700">
-          <View>
-            <Text className="text-sm text-gray-400">Welcome back,</Text>
-            <Text className="text-xl font-bold text-gray-50 mt-1">
-              {userIdentifier}
-            </Text>
-          </View>
-          <SignOutButton />
+        <View className="p-5 bg-gray-800">
+          <Text className="text-sm text-gray-400">Welcome back,</Text>
+          <Text className="text-xl font-bold text-gray-50 mt-1">
+            {userIdentifier}
+          </Text>
         </View>
       </SafeAreaView>
 

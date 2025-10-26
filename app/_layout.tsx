@@ -117,10 +117,10 @@ function RootLayoutNav() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: "#1F2937" },
+        headerStyle: { backgroundColor: "#000000" },
         headerTintColor: "#F9FAFB",
         headerTitleStyle: { fontWeight: "bold" },
-        contentStyle: { backgroundColor: "#111827" },
+        contentStyle: { backgroundColor: "#000000" },
       }}
     >
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
