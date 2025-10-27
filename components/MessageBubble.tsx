@@ -5,11 +5,22 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState } from "react";
+
+// Enable LayoutAnimation on Android
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface MessageBubbleProps {
   message: {
@@ -21,6 +32,7 @@ interface MessageBubbleProps {
     createdAt: number;
     readBy: string[];
     deliveredTo: string[];
+    detectedSourceLanguage?: string; // Language detected after batch translation
   };
   isOwnMessage: boolean;
   isPending?: boolean;
@@ -41,6 +53,12 @@ export const MessageBubble = ({
 }: MessageBubbleProps) => {
   const [showOriginal, setShowOriginal] = useState(false); // Toggle to show original when translation is displayed
 
+  // Toggle function with smooth animation
+  const toggleOriginal = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowOriginal(!showOriginal);
+  };
+
   // Get image URL if message has an image
   const imageUrl = useQuery(
     api.messages.getImageUrl,
@@ -56,15 +74,21 @@ export const MessageBubble = ({
   const preferredLanguage = currentUser?.preferredLanguage || "English";
 
   // Get cached translation if it exists for user's preferred language
+  // Skip only for optimistic messages (temp IDs start with "temp-")
+  const isOptimisticMessage =
+    typeof message._id === "string" && message._id.startsWith("temp-");
   const cachedTranslation = useQuery(
     api.translations.getTranslation,
-    typeof message._id === "string" || !currentUserId
+    isOptimisticMessage || !currentUserId
       ? "skip"
       : {
           messageId: message._id as Id<"messages">,
           targetLanguage: preferredLanguage,
         },
   );
+
+  // Get source language for determining if translation is needed
+  const sourceLanguage = cachedTranslation?.detectedSourceLanguage || message.detectedSourceLanguage || "";
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -80,35 +104,30 @@ export const MessageBubble = ({
     (id) => id !== message.senderId,
   ).length;
 
-  // Get flag emoji for language code
-  const getFlagEmoji = (languageCode: string): string => {
-    const languageToFlag: Record<string, string> = {
-      en: "🇺🇸",
-      es: "🇪🇸",
-      fr: "🇫🇷",
-      de: "🇩🇪",
-      it: "🇮🇹",
-      pt: "🇵🇹",
-      ru: "🇷🇺",
-      zh: "🇨🇳",
-      ja: "🇯🇵",
-      ko: "🇰🇷",
-      ar: "🇸🇦",
-      hi: "🇮🇳",
-    };
+  // Determine if we have a translation available and if it's needed
+  // Only show translation if the source language is different from the preferred language
+  const needsTranslation =
+    sourceLanguage && sourceLanguage !== preferredLanguage;
+  const hasTranslation = !!cachedTranslation && needsTranslation;
 
-    const code = languageCode.toLowerCase().substring(0, 2);
-    return languageToFlag[code] || "🌐";
-  };
+  // Get cultural context from the translation (e.g., Japanese→English translation contains Japanese cultural context explained in English)
+  const culturalHints = cachedTranslation?.culturalHints || [];
+  const slangExplanations = cachedTranslation?.slangExplanations || [];
 
-  // Determine if we have a translation available (batch translation runs in background)
-  const hasTranslation = !!cachedTranslation;
+  // Check if translation is pending (for messages from others in a different language)
+  const isTranslationPending =
+    !isOwnMessage && // Only for received messages
+    !isOptimisticMessage && // Not for optimistic messages
+    !message.detectedSourceLanguage && // Language not detected yet
+    preferredLanguage !== "English"; // User has non-English preference
 
   // Capitalize sender name for group chats
   const capitalizedSenderName = senderName
     ? senderName
         .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
         .join(" ")
     : "Unknown";
 
@@ -147,12 +166,12 @@ export const MessageBubble = ({
           </Text>
         )}
 
-        <View
+        <TouchableOpacity
           style={[
             message.imageId ? styles.bubbleNoImage : styles.bubble,
             isOwnMessage
               ? {
-                  backgroundColor: "#3D88F7",
+                  backgroundColor: "#3460A0",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                   borderBottomLeftRadius: 16,
@@ -166,6 +185,9 @@ export const MessageBubble = ({
                   borderBottomRightRadius: 16,
                 },
           ]}
+          onPress={hasTranslation ? toggleOriginal : undefined}
+          disabled={!hasTranslation}
+          activeOpacity={hasTranslation ? 0.7 : 1}
         >
           {/* Image if present */}
           {message.imageId && (
@@ -187,39 +209,145 @@ export const MessageBubble = ({
           {/* Text content if present */}
           {message.content && (
             <>
-              {/* Show translation label if translation is displayed */}
-              {hasTranslation && !showOriginal && (
-                <TouchableOpacity
-                  onPress={() => setShowOriginal(true)}
+              {/* Main message text - show translation if available, loading if pending, otherwise original */}
+              {isTranslationPending ? (
+                <View
                   style={[
-                    styles.translationLabel,
-                    message.imageId && { marginHorizontal: 12, marginTop: 8 },
+                    styles.translationLoadingContainer,
+                    message.imageId && styles.translationLoadingWithImage,
                   ]}
-                  activeOpacity={0.7}
                 >
-                  <Text style={styles.translationLabelText}>
-                    {getFlagEmoji(
-                      cachedTranslation!.detectedSourceLanguage ||
-                        cachedTranslation!.detectedLanguage,
-                    )}{" "}
-                    Translated from{" "}
-                    {cachedTranslation!.detectedSourceLanguage ||
-                      cachedTranslation!.detectedLanguage}{" "}
-                    🌐
+                  <ActivityIndicator size="small" color="#93C5FD" />
+                  <Text style={styles.translationLoadingText}>
+                    Translating...
                   </Text>
-                </TouchableOpacity>
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.messageText,
+                    message.imageId && styles.messageTextWithImage,
+                  ]}
+                >
+                  {hasTranslation
+                    ? cachedTranslation!.translatedText
+                    : message.content}
+                </Text>
               )}
 
-              <Text
-                style={[
-                  styles.messageText,
-                  message.imageId && styles.messageTextWithImage,
-                ]}
-              >
-                {hasTranslation && !showOriginal
-                  ? cachedTranslation!.translatedText
-                  : message.content}
-              </Text>
+              {/* Translation label below text */}
+              {hasTranslation && (
+                <Text
+                  style={[
+                    styles.translationLabelText,
+                    message.imageId && styles.translationLabelWithImage,
+                    isOwnMessage && styles.translationLabelOwn,
+                  ]}
+                >
+                  {showOriginal
+                    ? "Hide original"
+                    : `Translated from ${sourceLanguage} to ${preferredLanguage}`}
+                </Text>
+              )}
+
+              {/* Expanded section showing original + context */}
+              {hasTranslation && showOriginal && (
+                <View style={styles.expandedSection}>
+                  {/* Divider */}
+                  <View
+                    style={[styles.divider, isOwnMessage && styles.dividerOwn]}
+                  />
+
+                  {/* Original message */}
+                  <View style={styles.originalSection}>
+                    <Text
+                      style={[
+                        styles.originalHeader,
+                        isOwnMessage && styles.headerOwn,
+                      ]}
+                    >
+                      Original Message
+                    </Text>
+                    <Text
+                      style={[
+                        styles.originalText,
+                        isOwnMessage && styles.contentOwn,
+                      ]}
+                    >
+                      {message.content}
+                    </Text>
+                  </View>
+
+                  {/* Cultural hints - from source language */}
+                  {culturalHints && culturalHints.length > 0 && (
+                    <View
+                      style={[
+                        styles.contextSection,
+                        isOwnMessage && styles.contextSectionOwn,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.contextHeader,
+                          isOwnMessage && styles.headerOwn,
+                        ]}
+                      >
+                        ℹ️ Cultural Context
+                      </Text>
+                      {culturalHints.map((hint, index) => (
+                        <Text
+                          key={index}
+                          style={[
+                            styles.contextText,
+                            isOwnMessage && styles.contentOwn,
+                          ]}
+                        >
+                          • {hint}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Slang explanations - from source language */}
+                  {slangExplanations && slangExplanations.length > 0 && (
+                    <View
+                      style={[
+                        styles.contextSection,
+                        isOwnMessage && styles.contextSectionOwn,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.slangHeader,
+                          isOwnMessage && styles.headerOwn,
+                        ]}
+                      >
+                        📚 Slang & Idioms
+                      </Text>
+                      {slangExplanations.map((item, index) => (
+                        <Text
+                          key={index}
+                          style={[
+                            styles.contextText,
+                            isOwnMessage && styles.contentOwn,
+                          ]}
+                        >
+                          •{" "}
+                          <Text
+                            style={[
+                              styles.slangTerm,
+                              isOwnMessage && styles.contentOwn,
+                            ]}
+                          >
+                            {item.term}
+                          </Text>{" "}
+                          - {item.explanation}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
             </>
           )}
 
@@ -244,72 +372,7 @@ export const MessageBubble = ({
               </Text>
             )}
           </View>
-        </View>
-
-        {/* Show original message and cultural context when user taps "Translated from..." */}
-        {showOriginal && hasTranslation && (() => {
-            const detectedLang = cachedTranslation!.detectedSourceLanguage;
-            const culturalHints = cachedTranslation!.culturalHints || [];
-            const slangExplanations = cachedTranslation!.slangExplanations || [];
-
-            return (
-              <View style={styles.originalMessageContainer}>
-                {/* Header with close button */}
-                <View style={styles.originalMessageHeader}>
-                  <Text style={styles.originalMessageHeaderText}>
-                    {getFlagEmoji(detectedLang)} Original Message
-                  </Text>
-                  <TouchableOpacity onPress={() => setShowOriginal(false)}>
-                    <Text style={styles.hideButtonText}>
-                      Hide
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Original message */}
-                <View style={styles.originalMessageContent}>
-                  <Text style={styles.originalMessageText}>
-                    {message.content}
-                  </Text>
-                </View>
-
-                {/* Cultural hints */}
-                {culturalHints.length > 0 && (
-                  <View style={styles.culturalHintsContainer}>
-                    <Text style={styles.culturalHintsTitle}>
-                      ℹ️ Cultural Context:
-                    </Text>
-                    {culturalHints.map((hint, index) => (
-                      <Text
-                        key={index}
-                        style={styles.culturalHintText}
-                      >
-                        • {hint}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-
-                {/* Slang explanations */}
-                {slangExplanations.length > 0 && (
-                  <View style={styles.slangContainer}>
-                    <Text style={styles.slangTitle}>
-                      📚 Slang & Idioms:
-                    </Text>
-                    {slangExplanations.map((item, index) => (
-                      <Text
-                        key={index}
-                        style={styles.slangText}
-                      >
-                        • <Text style={styles.slangTerm}>{item.term}</Text> -{" "}
-                        {item.explanation}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-          })()}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -405,6 +468,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  translationLoadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+  },
+  translationLoadingWithImage: {
+    paddingHorizontal: 12,
+  },
+  translationLoadingText: {
+    fontSize: 14,
+    color: "#93C5FD",
+    fontStyle: "italic",
+  },
   timestampContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -422,92 +499,84 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 4,
     paddingRight: 5,
-    color: "#1E40AF",
+    color: "#000000",
     letterSpacing: -6,
-  },
-  translationLabel: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
   },
   translationLabelText: {
     fontSize: 11,
     color: "#93C5FD",
     fontWeight: "500",
+    marginTop: 6,
   },
-  originalMessageContainer: {
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: "rgba(61, 136, 247, 0.15)",
+  translationLabelOwn: {
+    color: "#000000",
   },
-  originalMessageHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  translationLabelWithImage: {
+    marginTop: 4,
+    marginHorizontal: 12,
+    marginBottom: 4,
+  },
+  expandedSection: {
+    marginTop: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(147, 197, 253, 0.2)",
     marginBottom: 12,
   },
-  originalMessageHeaderText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#93C5FD",
+  dividerOwn: {
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
   },
-  hideButtonText: {
-    fontSize: 14,
+  originalSection: {
+    marginBottom: 8,
+  },
+  originalHeader: {
+    fontSize: 11,
     fontWeight: "600",
-    color: "#60A5FA",
+    color: "#93C5FD",
+    marginBottom: 4,
   },
-  originalMessageContent: {
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-  },
-  originalMessageText: {
-    fontSize: 16,
-    lineHeight: 24,
+  originalText: {
+    fontSize: 15,
+    lineHeight: 20,
     color: "#E5E7EB",
+    opacity: 0.9,
   },
-  culturalHintsContainer: {
-    marginTop: 12,
-    paddingTop: 12,
+  contextSection: {
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: "rgba(61, 136, 247, 0.3)",
+    borderTopColor: "rgba(147, 197, 253, 0.15)",
   },
-  culturalHintsTitle: {
-    fontSize: 12,
+  contextSectionOwn: {
+    borderTopColor: "rgba(0, 0, 0, 0.2)",
+  },
+  contextHeader: {
+    fontSize: 11,
     fontWeight: "600",
-    marginBottom: 8,
     color: "#93C5FD",
-  },
-  culturalHintText: {
-    fontSize: 12,
-    lineHeight: 20,
     marginBottom: 6,
-    paddingLeft: 4,
+  },
+  contextText: {
+    fontSize: 12,
+    lineHeight: 18,
     color: "#C7D2FE",
+    marginBottom: 4,
   },
-  slangContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(61, 136, 247, 0.3)",
-  },
-  slangTitle: {
-    fontSize: 12,
+  slangHeader: {
+    fontSize: 11,
     fontWeight: "600",
-    marginBottom: 8,
     color: "#FCD34D",
-  },
-  slangText: {
-    fontSize: 12,
-    lineHeight: 20,
     marginBottom: 6,
-    paddingLeft: 4,
-    color: "#FEF3C7",
   },
   slangTerm: {
     fontWeight: "600",
+    color: "#FEF3C7",
+  },
+  headerOwn: {
+    color: "#000000",
+  },
+  contentOwn: {
+    color: "#FFFFFF",
   },
 });

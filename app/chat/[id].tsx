@@ -543,6 +543,9 @@ const ChatScreen = () => {
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: false })
           }
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+          }}
           style={styles.messagesList}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -557,7 +560,11 @@ const ChatScreen = () => {
             typingUsers && typingUsers.length > 0 ? (
               <View style={styles.typingIndicatorContainer}>
                 <Text style={styles.typingIndicatorText}>
-                  {typingUsers[0].name} is typing...
+                  {typingUsers[0].name
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(" ")}{" "}
+                  is typing...
                 </Text>
               </View>
             ) : null

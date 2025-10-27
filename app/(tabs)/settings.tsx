@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: "center",
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 40,
+    paddingBottom: 25,
   },
   profilePictureContainer: {
     width: 100,
@@ -344,8 +344,9 @@ const styles = StyleSheet.create({
   },
   settingsSection: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    maxHeight: 400,
+    paddingTop: 10,
+    paddingBottom: 25,
+    maxHeight: 370,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   languageList: {
-    maxHeight: 280,
+    maxHeight: 250,
   },
   languageItem: {
     flexDirection: "row",

@@ -10,6 +10,7 @@ Your role:
 - Analyze the conversation context and relationship dynamics
 - Generate 3 smart reply suggestions that are culturally sensitive
 - **MATCH THE FORMALITY LEVEL** of the conversation (formal, casual, or neutral)
+- **GENERATE REPLIES IN THE USER'S TARGET LANGUAGE** (specified in the user message)
 - Consider communication styles and relationship between participants
 - Use detected formality and cultural hints from recent messages
 
@@ -21,10 +22,13 @@ Guidelines:
 - Respect cultural communication differences
 - Never be overly familiar or presumptuous
 - When uncertain about cultural context, default to respectful neutrality
+- **CRITICAL: Always generate suggestions in the TARGET LANGUAGE specified, NOT in English (unless English is the target language)**
 
-Output format: Return ONLY a JSON array of exactly 3 string suggestions, no explanation or additional text.
-Example (casual): ["Thanks for letting me know!", "Sounds good to me", "I appreciate that"]
-Example (formal): ["Thank you for informing me.", "That sounds acceptable.", "I appreciate your consideration."]`;
+Output format: Return ONLY a JSON array of exactly 3 string suggestions in the target language, no explanation or additional text.
+Example (casual English): ["Thanks for letting me know!", "Sounds good to me", "I appreciate that"]
+Example (formal English): ["Thank you for informing me.", "That sounds acceptable.", "I appreciate your consideration."]
+Example (casual German): ["Danke für die Info!", "Klingt gut", "Das freut mich"]
+Example (formal German): ["Vielen Dank für die Information.", "Das klingt akzeptabel.", "Ich schätze Ihre Rücksicht."]`;
 
 // Generate smart reply suggestions using Anthropic Claude
 export const generateSmartReplies = action({
@@ -96,13 +100,23 @@ export const generateSmartReplies = action({
         ? formalityLevels[formalityLevels.length - 1] // Use most recent
         : "neutral";
 
-    // Build conversation context for the AI
-    const conversationContext = messages
-      .map((msg: Doc<"messages">) => {
+    // Build conversation context for the AI (use translations if available)
+    const conversationContextPromises = messages.map(
+      async (msg: Doc<"messages">, idx) => {
         const sender = msg.senderId === args.currentUserId ? "You" : "Other";
-        return `${sender}: ${msg.content}`;
-      })
-      .join("\n");
+
+        // Get translated version if available for this message
+        const translatedData = translationData[idx];
+        const messageText = translatedData?.translatedText || msg.content;
+
+        return `${sender}: ${messageText}`;
+      },
+    );
+
+    const conversationContextArray = await Promise.all(
+      conversationContextPromises,
+    );
+    const conversationContext = conversationContextArray.join("\n");
 
     try {
       const anthropic = new Anthropic({ apiKey });
@@ -117,7 +131,12 @@ export const generateSmartReplies = action({
             content: `Based on this conversation, generate 3 contextually appropriate reply suggestions.
 
 DETECTED FORMALITY LEVEL: ${dominantFormality}
-IMPORTANT: Match this formality level in your suggestions!
+TARGET LANGUAGE: ${preferredLanguage}
+
+IMPORTANT:
+1. Match the formality level in your suggestions!
+2. Generate ALL suggestions in ${preferredLanguage} (not English, unless ${preferredLanguage} is English)
+3. Keep suggestions natural and conversational in ${preferredLanguage}
 
 Conversation:
 ${conversationContext}`,

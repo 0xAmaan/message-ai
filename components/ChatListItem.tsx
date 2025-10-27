@@ -43,6 +43,23 @@ export const ChatListItem = ({
   const lastMessage =
     messages && messages.length > 0 ? messages[messages.length - 1] : null;
 
+  // Get current user's preferred language
+  const currentUser = useQuery(
+    api.users.getCurrentUser,
+    currentUserId ? { clerkId: currentUserId } : "skip",
+  );
+
+  // Get translation for the last message if it exists
+  const lastMessageTranslation = useQuery(
+    api.translations.getTranslation,
+    lastMessage && currentUser?.preferredLanguage
+      ? {
+          messageId: lastMessage._id,
+          targetLanguage: currentUser.preferredLanguage,
+        }
+      : "skip",
+  );
+
   // Check if conversation has unread messages
   const hasUnread = useQuery(api.messages.hasUnreadMessages, {
     conversationId: conversation._id,
@@ -89,11 +106,11 @@ export const ChatListItem = ({
     }
   })();
 
-  // Last message preview
+  // Last message preview - use translation if available
   const lastMessageText = lastMessage
     ? lastMessage.imageId
       ? "📷 Image"
-      : lastMessage.content
+      : lastMessageTranslation?.translatedText || lastMessage.content
     : "No messages yet";
 
   // Time formatting
