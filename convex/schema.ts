@@ -10,6 +10,7 @@ export default defineSchema({
     profilePicUrl: v.optional(v.string()),
     isOnline: v.boolean(),
     lastSeen: v.number(),
+    preferredLanguage: v.optional(v.string()), // User's preferred language for translations (default: "English")
   })
     .index("by_clerk_id", ["clerkId"])
     .index("by_phone", ["phoneNumber"]),

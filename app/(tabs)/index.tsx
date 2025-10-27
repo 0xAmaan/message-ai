@@ -23,12 +23,6 @@ const ChatsScreen = () => {
     user?.id ? { clerkId: user.id } : "skip",
   );
 
-  const userIdentifier =
-    user?.username ||
-    user?.primaryPhoneNumber?.phoneNumber ||
-    user?.primaryEmailAddress?.emailAddress ||
-    "User";
-
   // Loading state
   if (conversations === undefined) {
     return (

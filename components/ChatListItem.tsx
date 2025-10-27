@@ -3,6 +3,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
 
 interface ChatListItemProps {
   conversation: {
@@ -41,11 +42,39 @@ export const ChatListItem = ({
       ? participants?.find((p) => p.clerkId !== currentUserId)
       : null;
 
-  // Display name
-  const displayName =
-    conversation.type === "direct"
-      ? otherUser?.name || "Unknown User"
-      : `Group (${conversation.participants.length})`;
+  // Display name with capitalization
+  const capitalizeName = (name: string) =>
+    name
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+  const displayName = (() => {
+    if (conversation.type === "direct") {
+      return otherUser?.name ? capitalizeName(otherUser.name) : "Unknown User";
+    } else {
+      // Group chat - show participant names
+      const otherParticipants = participants?.filter((p) => p.clerkId !== currentUserId) || [];
+      if (otherParticipants.length === 0) return "Group Chat";
+
+      const capitalizedNames = otherParticipants.map((p) => capitalizeName(p.name || "Unknown"));
+
+      if (capitalizedNames.length === 1) return capitalizedNames[0];
+      if (capitalizedNames.length === 2) {
+        return `${capitalizedNames[0]} & ${capitalizedNames[1]}`;
+      }
+
+      // For 3+ people, try to fit names
+      const fullName = capitalizedNames.join(", ").replace(/, ([^,]*)$/, " & $1");
+
+      // If name is too long (over 25 chars for list view), truncate
+      if (fullName.length > 25) {
+        return `${capitalizedNames[0]}, ${capitalizedNames[1]}...`;
+      }
+
+      return fullName;
+    }
+  })();
 
   // Last message preview
   const lastMessageText = lastMessage
@@ -107,13 +136,21 @@ export const ChatListItem = ({
     >
       {/* Avatar */}
       <View
-        // className="w-12 h-12 rounded-full justify-center items-center mr-3 relative"
-        // style={{ backgroundColor: "#3D88F7" }}
-        className={`w-12 h-12 rounded-full bg-primary justify-center items-center mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
+        className={`w-12 h-12 rounded-full mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
       >
-        <Text className="text-xl font-semibold text-gray-50">
-          {displayName.charAt(0).toUpperCase()}
-        </Text>
+        {otherUser?.profilePicUrl ? (
+          <Image
+            source={{ uri: otherUser.profilePicUrl }}
+            className="w-12 h-12 rounded-full"
+            contentFit="cover"
+          />
+        ) : (
+          <View className="w-12 h-12 rounded-full bg-primary justify-center items-center">
+            <Text className="text-xl font-semibold text-gray-50">
+              {displayName.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         {otherUser?.isOnline && (
           <View className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background-base" />
         )}

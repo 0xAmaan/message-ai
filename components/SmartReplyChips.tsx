@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View, Animated } from "react-native";
+import { Text, TouchableOpacity, View, Animated, StyleSheet } from "react-native";
 import { X } from "lucide-react-native";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -70,36 +70,33 @@ export const SmartReplyChips = ({
   }
 
   return (
-    <View className="bg-gray-800 px-3 py-2 border-t border-gray-700">
+    <View style={styles.container}>
       <Animated.View style={{ opacity: fadeAnim }}>
         {/* Header with dismiss button */}
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-xs font-medium text-gray-400">
+        <View style={styles.header}>
+          <Text style={styles.headerText}>
             Smart Replies
           </Text>
           <TouchableOpacity
             onPress={handleDismiss}
-            className="p-1 active:opacity-50"
+            style={styles.dismissButton}
+            activeOpacity={0.5}
           >
             <X color="#9CA3AF" size={16} />
           </TouchableOpacity>
         </View>
 
         {/* Reply chips */}
-        <View className="flex-row gap-2">
+        <View style={styles.chipsContainer}>
           {smartReply.suggestions.map((suggestion, index) => (
             <TouchableOpacity
               key={index}
               onPress={() => handleSelectReply(suggestion)}
-              className="flex-1 rounded-full py-2 px-3 active:opacity-80"
-              style={{
-                backgroundColor: 'rgba(61, 136, 247, 0.2)',
-                borderWidth: 1,
-                borderColor: 'rgba(61, 136, 247, 0.5)'
-              }}
+              style={styles.chip}
+              activeOpacity={0.8}
             >
               <Text
-                className="text-sm text-center text-blue-300"
+                style={styles.chipText}
                 numberOfLines={1}
               >
                 {suggestion}
@@ -139,22 +136,69 @@ export const SmartReplyChipsLoading = () => {
   });
 
   return (
-    <View className="bg-gray-800 px-3 py-2 border-t border-gray-700">
-      <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-xs font-medium text-gray-400">
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>
           Generating suggestions...
         </Text>
       </View>
 
-      <View className="flex-row gap-2">
+      <View style={styles.chipsContainer}>
         {[1, 2, 3].map((i) => (
           <Animated.View
             key={i}
-            className="flex-1 bg-gray-700 rounded-full h-8"
-            style={{ opacity: shimmerOpacity }}
+            style={[styles.shimmerChip, { opacity: shimmerOpacity }]}
           />
         ))}
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#1F2937",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#374151",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  headerText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#9CA3AF",
+  },
+  dismissButton: {
+    padding: 4,
+  },
+  chipsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  chip: {
+    flex: 1,
+    borderRadius: 9999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(61, 136, 247, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(61, 136, 247, 0.5)",
+  },
+  chipText: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#93C5FD",
+  },
+  shimmerChip: {
+    flex: 1,
+    backgroundColor: "#374151",
+    borderRadius: 9999,
+    height: 32,
+  },
+});

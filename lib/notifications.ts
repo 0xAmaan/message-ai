@@ -27,16 +27,21 @@ export const registerForPushNotifications = async () => {
       return null;
     }
 
-    // Get the push token
-    // TODO: Add projectId for production push notifications
-    // const token = await Notifications.getExpoPushTokenAsync({
-    //   projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-    // });
-    // console.log("Push token:", token.data);
-    // return token.data;
-
-    console.log("Push notifications disabled for development");
-    return null;
+    // Get the push token (for Expo Go testing, this works without projectId)
+    try {
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: process.env.EXPO_PUBLIC_PROJECT_ID || "default-project-id",
+      });
+      console.log("Push token:", token.data);
+      return token.data;
+    } catch (tokenError) {
+      console.warn(
+        "Could not get push token, but notifications will still work locally:",
+        tokenError,
+      );
+      // Return null but notifications still work locally (foreground/background)
+      return null;
+    }
   } catch (error) {
     console.error("Error getting push token:", error);
     return null;

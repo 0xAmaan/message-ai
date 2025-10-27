@@ -7,6 +7,7 @@ import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +22,9 @@ import {
   SmartReplyChips,
   SmartReplyChipsLoading,
 } from "../../components/SmartReplyChips";
+import { useNetworkStatus } from "../../lib/network";
+import { MessageQueue } from "../../lib/messageQueue";
+import { sendLocalNotification } from "../../lib/notifications";
 
 // Optimistic message type
 interface OptimisticMessage {
@@ -50,6 +54,9 @@ const ChatScreen = () => {
   >(new Map()); // Maps temp ID -> real message ID
   const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
   const [showSmartReplies, setShowSmartReplies] = useState(true);
+
+  // Network status
+  const isOnline = useNetworkStatus();
 
   const conversationId = id as Id<"conversations">;
 
@@ -83,13 +90,42 @@ const ChatScreen = () => {
   // Actions
   const generateSmartReplies = useAction(api.smartReplies.generateSmartReplies);
 
-  // Get the other user (for direct chats)
-  const otherUser =
-    conversation?.type === "direct"
-      ? participants?.find((p) => p.clerkId !== user?.id)
-      : null;
+  // Get display name for chat with capitalization
+  const displayName = (() => {
+    if (!conversation || !participants) return "Chat";
 
-  const displayName = otherUser?.name || "Chat";
+    const capitalizeName = (name: string) =>
+      name
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+
+    if (conversation.type === "direct") {
+      const otherUser = participants.find((p) => p.clerkId !== user?.id);
+      return otherUser?.name ? capitalizeName(otherUser.name) : "Chat";
+    } else {
+      // Group chat - show participant names
+      const otherParticipants = participants.filter((p) => p.clerkId !== user?.id);
+      if (otherParticipants.length === 0) return "Group Chat";
+
+      const capitalizedNames = otherParticipants.map((p) => capitalizeName(p.name || "Unknown"));
+
+      if (capitalizedNames.length === 1) return capitalizedNames[0];
+      if (capitalizedNames.length === 2) {
+        return `${capitalizedNames[0]} & ${capitalizedNames[1]}`;
+      }
+
+      // For 3+ people, try to fit as many names as possible
+      const fullName = capitalizedNames.join(", ").replace(/, ([^,]*)$/, " & $1");
+
+      // If name is too long (over 30 chars), truncate
+      if (fullName.length > 30) {
+        return `${capitalizedNames[0]}, ${capitalizedNames[1]}...`;
+      }
+
+      return fullName;
+    }
+  })();
 
   // Merge real messages with optimistic messages (with smart deduplication)
   const allMessages = (() => {
@@ -149,6 +185,48 @@ const ChatScreen = () => {
     }
   }, [conversationId, user?.id, markAsRead]);
 
+  // Process queued messages when coming back online
+  useEffect(() => {
+    const processQueue = async () => {
+      if (!isOnline || !user?.id) return;
+
+      const queue = await MessageQueue.getQueue();
+      const conversationQueue = queue.filter(
+        (msg) => msg.conversationId === conversationId,
+      );
+
+      if (conversationQueue.length === 0) return;
+
+      console.log(`Processing ${conversationQueue.length} queued messages...`);
+
+      for (const queuedMsg of conversationQueue) {
+        try {
+          await sendMessage({
+            conversationId: queuedMsg.conversationId as Id<"conversations">,
+            senderId: user.id,
+            content: queuedMsg.content,
+          });
+
+          // Remove from queue after successful send
+          await MessageQueue.dequeue(queuedMsg.id);
+          console.log(`Sent queued message: ${queuedMsg.id}`);
+        } catch (error) {
+          console.error("Failed to send queued message:", error);
+          // Increment attempt count
+          await MessageQueue.incrementAttempts(queuedMsg.id);
+
+          // Remove if too many attempts (more than 3)
+          if (queuedMsg.attempts >= 3) {
+            await MessageQueue.dequeue(queuedMsg.id);
+            console.log(`Removed failed message after 3 attempts: ${queuedMsg.id}`);
+          }
+        }
+      }
+    };
+
+    processQueue();
+  }, [isOnline, conversationId, user?.id, sendMessage]);
+
   // Generate smart replies when screen opens with unread messages
   useEffect(() => {
     const generateRepliesOnOpen = async () => {
@@ -190,10 +268,29 @@ const ChatScreen = () => {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+
+      // Send notification for new messages from others (if app is backgrounded)
+      const newMessages = allMessages.slice(previousCount);
+      const messagesFromOthers = newMessages.filter(
+        (msg) => msg.senderId !== user?.id,
+      );
+
+      messagesFromOthers.forEach((msg) => {
+        const appState = AppState.currentState;
+        // Only notify if app is in background
+        if (appState !== "active") {
+          const senderName = participants?.find((p) => p.clerkId === msg.senderId)?.name || "Someone";
+          sendLocalNotification(
+            `${senderName} sent a message`,
+            msg.content || "Sent an image",
+            { conversationId },
+          );
+        }
+      });
     }
 
     previousMessageCountRef.current = currentCount;
-  }, [allMessages.length]);
+  }, [allMessages.length, allMessages, user?.id, participants, conversationId]);
 
   // Debounced smart reply generation when new messages arrive
   useEffect(() => {
@@ -266,6 +363,17 @@ const ChatScreen = () => {
       // Clear smart replies when user sends a message
       setShowSmartReplies(false);
 
+      // If offline, queue the message
+      if (!isOnline) {
+        console.log("Offline: Queueing message");
+        await MessageQueue.enqueue({
+          conversationId,
+          content: content.trim(),
+        });
+        // Keep optimistic message visible with "queued" status
+        return;
+      }
+
       try {
         const messageId = await sendMessage({
           conversationId,
@@ -283,13 +391,23 @@ const ChatScreen = () => {
         // once the real message appears in the query results
       } catch (error) {
         console.error("Failed to send message:", error);
-        // Remove failed optimistic message immediately
-        setOptimisticMessages((prev) =>
-          prev.filter((msg) => msg._id !== tempId),
-        );
+
+        // If network error, queue the message for retry
+        if (error instanceof Error && error.message.includes("network")) {
+          console.log("Network error: Queueing message");
+          await MessageQueue.enqueue({
+            conversationId,
+            content: content.trim(),
+          });
+        } else {
+          // Remove failed optimistic message immediately for non-network errors
+          setOptimisticMessages((prev) =>
+            prev.filter((msg) => msg._id !== tempId),
+          );
+        }
       }
     },
-    [user?.id, conversationId, sendMessage, clearSmartReplies],
+    [user?.id, conversationId, sendMessage, clearSmartReplies, isOnline],
   );
 
   const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
@@ -364,6 +482,15 @@ const ChatScreen = () => {
     <View className="flex-1 bg-background-base">
       <Header navigation={navigation} title={displayName} />
 
+      {/* Network Status Banner */}
+      {!isOnline && (
+        <View className="px-4 py-2 bg-yellow-900/50 border-b border-yellow-700/50">
+          <Text className="text-sm text-yellow-200 text-center">
+            ⚠️ No internet connection. Messages will be sent when back online.
+          </Text>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -373,14 +500,28 @@ const ChatScreen = () => {
         <FlatList
           ref={flatListRef}
           data={allMessages}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              isOwnMessage={item.senderId === user?.id}
-              isPending={(item as OptimisticMessage).isPending}
-              currentUserId={user?.id}
-            />
-          )}
+          renderItem={({ item }) => {
+            const sender = participants?.find((p) => p.clerkId === item.senderId);
+            return (
+              <MessageBubble
+                message={item}
+                isOwnMessage={item.senderId === user?.id}
+                isPending={(item as OptimisticMessage).isPending}
+                currentUserId={user?.id}
+                isGroupChat={conversation?.type === "group"}
+                senderName={
+                  conversation?.type === "group" && item.senderId !== user?.id
+                    ? sender?.name
+                    : undefined
+                }
+                senderProfilePicUrl={
+                  conversation?.type === "group" && item.senderId !== user?.id
+                    ? sender?.profilePicUrl
+                    : undefined
+                }
+              />
+            );
+          }}
           keyExtractor={(item) => item._id}
           contentContainerStyle={
             allMessages.length === 0

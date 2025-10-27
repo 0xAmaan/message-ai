@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, mutation, query } from "./_generated/server";
+import { action, internalAction, mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import Anthropic from "@anthropic-ai/sdk";
@@ -384,5 +384,140 @@ export const clearTranslation = mutation({
     if (translation) {
       await ctx.db.delete(translation._id);
     }
+  },
+});
+
+// Auto-translate a new message for all recipients based on their language preferences
+export const autoTranslateForRecipients = internalAction({
+  args: {
+    messageId: v.id("messages"),
+    conversationId: v.id("conversations"),
+    senderId: v.string(), // clerkId of sender
+  },
+  handler: async (ctx, args) => {
+    // Get conversation to find participants
+    const conversation = await ctx.runQuery(api.conversations.getConversation, {
+      conversationId: args.conversationId,
+    });
+
+    if (!conversation) {
+      console.error("Conversation not found");
+      return { translatedCount: 0 };
+    }
+
+    let translatedCount = 0;
+
+    // For each participant (except sender), translate to their preferred language
+    for (const participantId of conversation.participants) {
+      // Skip the sender
+      if (participantId === args.senderId) continue;
+
+      // Get participant's user data to check preferred language
+      const participantUser = await ctx.runQuery(api.users.getCurrentUser, {
+        clerkId: participantId,
+      });
+
+      if (!participantUser || !participantUser.preferredLanguage) continue;
+
+      try {
+        // Check if translation already exists
+        const existing = await ctx.runQuery(api.translations.getTranslation, {
+          messageId: args.messageId,
+          targetLanguage: participantUser.preferredLanguage,
+        });
+
+        // Only translate if not already translated
+        if (!existing) {
+          await ctx.runAction(api.translations.translateMessage, {
+            messageId: args.messageId,
+            targetLanguage: participantUser.preferredLanguage,
+            userId: participantId,
+          });
+          translatedCount++;
+        }
+      } catch (error) {
+        console.error(
+          `Failed to translate for participant ${participantId}:`,
+          error,
+        );
+        // Continue with next participant
+      }
+    }
+
+    return { translatedCount };
+  },
+});
+
+// Batch translate recent messages when user changes language preference
+export const batchTranslateRecentMessages = action({
+  args: {
+    userId: v.string(), // clerkId
+    targetLanguage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get all conversations for this user
+    const conversations = await ctx.runQuery(
+      api.conversations.getUserConversations,
+      {
+        clerkId: args.userId,
+      },
+    );
+
+    if (!conversations || conversations.length === 0) {
+      return { translatedCount: 0, conversationCount: 0 };
+    }
+
+    let totalTranslated = 0;
+
+    // Process each conversation
+    for (const conversation of conversations) {
+      // Get last 10 messages from this conversation
+      const messages = await ctx.runQuery(api.messages.getMessages, {
+        conversationId: conversation._id,
+        limit: 10,
+      });
+
+      // Filter out messages sent by the user (they wrote it in their language)
+      // and messages already translated to target language
+      const messagesToTranslate = [];
+
+      for (const message of messages) {
+        // Skip user's own messages
+        if (message.senderId === args.userId) continue;
+
+        // Skip empty messages
+        if (!message.content.trim()) continue;
+
+        // Check if translation already exists
+        const existing = await ctx.runQuery(api.translations.getTranslation, {
+          messageId: message._id,
+          targetLanguage: args.targetLanguage,
+        });
+
+        if (!existing) {
+          messagesToTranslate.push(message);
+        }
+      }
+
+      // Translate each message
+      for (const message of messagesToTranslate) {
+        try {
+          await ctx.runAction(api.translations.translateMessage, {
+            messageId: message._id,
+            targetLanguage: args.targetLanguage,
+            userId: args.userId,
+          });
+          totalTranslated++;
+        } catch (error) {
+          console.error(`Failed to translate message ${message._id}:`, error);
+          // Continue with next message even if one fails
+        }
+      }
+    }
+
+    return {
+      translatedCount: totalTranslated,
+      conversationCount: conversations.length,
+    };
   },
 });

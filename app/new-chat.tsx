@@ -14,6 +14,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Check } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 
 const NewChatScreen = () => {
   const { user } = useUser();
@@ -109,12 +112,12 @@ const NewChatScreen = () => {
 
   return (
     <View className="flex-1 bg-background-base">
-      <Header navigation={navigation} />
+      <Header navigation={navigation} title="Start Chat" />
 
       {/* Search Input */}
       <View className="p-4 bg-background border-b border-gray-700">
         <TextInput
-          className="bg-background-base rounded-lg px-4 py-3 text-base mb-2 text-gray-50"
+          className="bg-background-base rounded-lg px-4 py-3 text-base text-gray-50"
           placeholder="Search by phone number (+1234567890)"
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
@@ -123,27 +126,7 @@ const NewChatScreen = () => {
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Text className="text-xs text-gray-400">
-          Tip: Select multiple users to create a group chat
-        </Text>
       </View>
-
-      {/* Create Chat Button */}
-      {selectedUsers.length > 0 && (
-        <View className="p-4 bg-background border-b border-gray-700">
-          <TouchableOpacity
-            style={styles.startChatButton}
-            onPress={handleCreateChat}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.startChatButtonText}>
-              {selectedUsers.length === 1
-                ? "Start Chat"
-                : `Create Group (${selectedUsers.length + 1} people)`}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* User List */}
       {displayUsers === undefined ? (
@@ -173,21 +156,23 @@ const NewChatScreen = () => {
                 onPress={() => handleToggleUser(item.clerkId)}
                 activeOpacity={0.7}
               >
-                {/* Profile Picture with selection indicator overlay */}
+                {/* Profile Picture */}
                 <View style={styles.profilePictureContainer}>
-                  <View style={styles.profilePicture}>
-                    <Text style={styles.profileInitial}>
-                      {item.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  {/* Online Indicator */}
-                  {item.isOnline && <View style={styles.onlineIndicator} />}
-                  {/* Selection indicator overlay */}
-                  {isSelected && (
-                    <View style={styles.selectionOverlay}>
-                      <Text style={styles.checkmark}>✓</Text>
+                  {item.profilePicUrl ? (
+                    <Image
+                      source={{ uri: item.profilePicUrl }}
+                      style={styles.profilePicture}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={styles.profilePicture}>
+                      <Text style={styles.profileInitial}>
+                        {item.name.charAt(0).toUpperCase()}
+                      </Text>
                     </View>
                   )}
+                  {/* Online Indicator */}
+                  {item.isOnline && <View style={styles.onlineIndicator} />}
                 </View>
 
                 {/* User Info */}
@@ -200,14 +185,10 @@ const NewChatScreen = () => {
                   </Text>
                 </View>
 
-                {/* Online Badge */}
-                {item.isOnline && (
-                  <View className="bg-emerald-500 px-2 py-1 rounded-xl">
-                    <Text className="text-xs font-semibold text-gray-50">
-                      Online
-                    </Text>
-                  </View>
-                )}
+                {/* Select Button with Check Icon */}
+                <View style={[styles.selectButton, isSelected && styles.selectButtonActive]}>
+                  {isSelected && <Check color="#F9FAFB" size={18} strokeWidth={3} />}
+                </View>
               </TouchableOpacity>
             );
           }}
@@ -216,15 +197,45 @@ const NewChatScreen = () => {
           className="flex-1 bg-background-base"
         />
       )}
+
+      {/* Fixed Start Chat Button at Bottom */}
+      {selectedUsers.length > 0 && (
+        <SafeAreaView edges={["bottom"]} style={styles.bottomButtonContainer}>
+          <TouchableOpacity
+            style={styles.startChatButton}
+            onPress={handleCreateChat}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.startChatButtonText}>
+              {selectedUsers.length === 1
+                ? "Start Chat"
+                : `Create Group (${selectedUsers.length + 1} people)`}
+            </Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Bottom Button Container
+  bottomButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#374151",
+  },
   // Start Chat Button
   startChatButton: {
     backgroundColor: "#3D88F7",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
@@ -245,7 +256,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#3D88F7",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -265,21 +276,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#1F2937",
   },
-  selectionOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 20,
-    backgroundColor: "rgba(61, 136, 247, 0.9)",
+  selectButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#6B7280",
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: 12,
   },
-  checkmark: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#F9FAFB",
+  selectButtonActive: {
+    backgroundColor: "#3D88F7",
+    borderColor: "#3D88F7",
   },
 });
 

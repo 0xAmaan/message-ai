@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 // Send a message
 export const sendMessage = mutation({
@@ -25,6 +26,19 @@ export const sendMessage = mutation({
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: Date.now(),
     });
+
+    // Schedule auto-translation for recipients in background (non-blocking)
+    if (args.content.trim()) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.translations.autoTranslateForRecipients,
+        {
+          messageId,
+          conversationId: args.conversationId,
+          senderId: args.senderId,
+        },
+      );
+    }
 
     return messageId;
   },

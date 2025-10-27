@@ -33,6 +33,7 @@ export const upsertFromClerkInternal = internalMutation({
         profilePicUrl: args.profilePicUrl,
         isOnline: true,
         lastSeen: Date.now(),
+        preferredLanguage: "English", // Default language
       });
     }
   },
@@ -70,6 +71,7 @@ export const upsertFromClerk = mutation({
         profilePicUrl: args.profilePicUrl,
         isOnline: true,
         lastSeen: Date.now(),
+        preferredLanguage: "English", // Default language
       });
     }
   },
@@ -144,5 +146,69 @@ export const updateOnlineStatus = mutation({
 export const listUsers = query({
   handler: async (ctx) => {
     return await ctx.db.query("users").collect();
+  },
+});
+
+// Update user's preferred language for translations
+export const updatePreferredLanguage = mutation({
+  args: {
+    clerkId: v.string(),
+    preferredLanguage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, {
+      preferredLanguage: args.preferredLanguage,
+    });
+
+    return user._id;
+  },
+});
+
+// Generate upload URL for profile picture
+export const generateProfilePicUploadUrl = mutation({
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// Get profile picture URL from storage ID
+export const getProfilePicUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
+// Update profile picture
+export const updateProfilePicture = mutation({
+  args: {
+    clerkId: v.string(),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    // Get the URL for the uploaded image
+    const imageUrl = await ctx.storage.getUrl(args.storageId);
+
+    if (!imageUrl) throw new Error("Failed to get image URL");
+
+    await ctx.db.patch(user._id, {
+      profilePicUrl: imageUrl,
+    });
+
+    return imageUrl;
   },
 });

@@ -1,10 +1,17 @@
 import { Id } from "@/convex/_generated/dataModel";
-import { Text, View, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import {
+  Text,
+  View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { Image } from "expo-image";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { TranslateButton } from "./TranslateButton";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface MessageBubbleProps {
   message: {
@@ -20,6 +27,9 @@ interface MessageBubbleProps {
   isOwnMessage: boolean;
   isPending?: boolean;
   currentUserId?: string; // For translation feature
+  senderName?: string; // Sender's name for group chats
+  senderProfilePicUrl?: string; // Sender's profile picture for group chats
+  isGroupChat?: boolean; // Whether this is a group chat
 }
 
 export const MessageBubble = ({
@@ -27,8 +37,11 @@ export const MessageBubble = ({
   isOwnMessage,
   isPending,
   currentUserId,
+  senderName,
+  senderProfilePicUrl,
+  isGroupChat,
 }: MessageBubbleProps) => {
-  const [showTranslation, setShowTranslation] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false); // Toggle to show original when translation is displayed
   const [isTranslating, setIsTranslating] = useState(false);
   const [localTranslation, setLocalTranslation] = useState<{
     translation: string;
@@ -43,31 +56,27 @@ export const MessageBubble = ({
     message.imageId ? { imageId: message.imageId } : "skip",
   );
 
-  // Get cached translation if it exists
+  // Get current user's data to fetch their preferred language
+  const currentUser = useQuery(
+    api.users.getCurrentUser,
+    currentUserId ? { clerkId: currentUserId } : "skip",
+  );
+
+  const preferredLanguage = currentUser?.preferredLanguage || "English";
+
+  // Get cached translation if it exists for user's preferred language
   const cachedTranslation = useQuery(
     api.translations.getTranslation,
     typeof message._id === "string" || !currentUserId
       ? "skip"
       : {
           messageId: message._id as Id<"messages">,
-          targetLanguage: "English",
+          targetLanguage: preferredLanguage,
         },
   );
 
   // Translation action
   const translateMessage = useAction(api.translations.translateMessage);
-
-  // Auto-show translation when cache updates after translating
-  useEffect(() => {
-    console.log("useEffect - cachedTranslation:", cachedTranslation);
-    console.log("useEffect - isTranslating:", isTranslating);
-
-    if (cachedTranslation && isTranslating) {
-      console.log("Translation cache updated, showing translation");
-      setShowTranslation(true);
-      setIsTranslating(false);
-    }
-  }, [cachedTranslation, isTranslating]);
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -84,58 +93,34 @@ export const MessageBubble = ({
   ).length;
 
   const handleTranslate = async () => {
-    console.log("🌐 Translate button clicked");
-    console.log("Message ID:", message._id);
-    console.log("Current User ID:", currentUserId);
-    console.log("Cached translation:", cachedTranslation);
-    console.log("Local translation:", localTranslation);
-
-    // Toggle if already translated (either cached or local)
-    if (cachedTranslation || localTranslation) {
-      console.log("Toggle translation visibility");
-      setShowTranslation(!showTranslation);
-      return;
-    }
-
     // Don't translate if missing required data or if it's an optimistic message
     const isOptimisticMessage =
       typeof message._id === "string" && message._id.startsWith("temp-");
 
     if (isOptimisticMessage || !currentUserId || !message.content.trim()) {
-      console.log("Missing required data for translation");
-      console.log("Is optimistic message:", isOptimisticMessage);
-      console.log("Has user ID:", !!currentUserId);
-      console.log("Has content:", !!message.content.trim());
       return;
     }
 
-    console.log("Starting translation...");
     setIsTranslating(true);
     try {
       const result = await translateMessage({
         messageId: message._id as Id<"messages">,
-        targetLanguage: "English",
+        targetLanguage: preferredLanguage,
         userId: currentUserId,
       });
 
-      console.log("Translation result:", result);
-
       if (result) {
-        // Store the translation locally and show it immediately
+        // Store the translation locally
         setLocalTranslation(result);
-        setShowTranslation(true);
-        setIsTranslating(false);
-      } else {
-        // If no result, stop loading
-        setIsTranslating(false);
       }
     } catch (error) {
       console.error("Translation error:", error);
-      setIsTranslating(false);
       Alert.alert(
         "Translation Failed",
         error instanceof Error ? error.message : "Failed to translate message",
       );
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -160,15 +145,32 @@ export const MessageBubble = ({
     return languageToFlag[code] || "🌐";
   };
 
-  // Only show translate button for other users' messages with text content
-  // AND only for saved messages (not optimistic/pending messages)
+  // Determine if we have a translation available
   const isOptimisticMessage =
     typeof message._id === "string" && message._id.startsWith("temp-");
+
+  const translation = cachedTranslation || localTranslation;
+  const hasTranslation = !!translation;
+
+  // Show translate button only if:
+  // 1. Not user's own message
+  // 2. Has text content
+  // 3. Not an optimistic message
+  // 4. No translation available yet
   const showTranslateButton =
     !isOwnMessage &&
     currentUserId &&
     message.content.trim().length > 0 &&
-    !isOptimisticMessage; // Only show for DB-saved messages
+    !isOptimisticMessage &&
+    !hasTranslation;
+
+  // Capitalize sender name for group chats
+  const capitalizedSenderName = senderName
+    ? senderName
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ")
+    : "Unknown";
 
   return (
     <View
@@ -177,7 +179,31 @@ export const MessageBubble = ({
         isOwnMessage ? styles.messageRowOwn : styles.messageRowOther,
       ]}
     >
+      {/* Profile picture for group chat messages from others */}
+      {isGroupChat && !isOwnMessage && (
+        <View style={styles.senderAvatarContainer}>
+          {senderProfilePicUrl ? (
+            <Image
+              source={{ uri: senderProfilePicUrl }}
+              style={styles.senderAvatar}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={styles.senderAvatar}>
+              <Text style={styles.senderAvatarText}>
+                {capitalizedSenderName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       <View style={styles.messageWrapper}>
+        {/* Sender name for group chat messages from others */}
+        {isGroupChat && !isOwnMessage && (
+          <Text style={styles.senderName}>{capitalizedSenderName}</Text>
+        )}
+
         <View
           style={[
             message.imageId ? styles.bubbleNoImage : styles.bubble,
@@ -215,16 +241,55 @@ export const MessageBubble = ({
             </View>
           )}
 
-          {/* Text content if present */}
-          {message.content && (
+          {/* Sender name for group chats */}
+          {senderName && !isOwnMessage && (
             <Text
               style={[
-                styles.messageText,
-                message.imageId && styles.messageTextWithImage,
+                styles.senderName,
+                message.imageId && styles.senderNameWithImage,
               ]}
             >
-              {message.content}
+              {capitalizedSenderName}
             </Text>
+          )}
+
+          {/* Text content if present */}
+          {message.content && (
+            <>
+              {/* Show translation label if translation is displayed */}
+              {hasTranslation && !showOriginal && (
+                <TouchableOpacity
+                  onPress={() => setShowOriginal(true)}
+                  style={[
+                    styles.translationLabel,
+                    message.imageId && { marginHorizontal: 12, marginTop: 8 },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.translationLabelText}>
+                    {getFlagEmoji(
+                      translation!.detectedSourceLanguage ||
+                        translation!.detectedLanguage,
+                    )}{" "}
+                    Translated from{" "}
+                    {translation!.detectedSourceLanguage ||
+                      translation!.detectedLanguage}{" "}
+                    🌐
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <Text
+                style={[
+                  styles.messageText,
+                  message.imageId && styles.messageTextWithImage,
+                ]}
+              >
+                {hasTranslation && !showOriginal
+                  ? translation!.translatedText || translation!.translation
+                  : message.content}
+              </Text>
+            </>
           )}
 
           {/* Timestamp and read receipts */}
@@ -250,49 +315,38 @@ export const MessageBubble = ({
           </View>
         </View>
 
-        {/* Translation Overlay */}
-        {showTranslation &&
-          (cachedTranslation || localTranslation) &&
-          (() => {
-            // Use cachedTranslation if available, otherwise use localTranslation
-            const translation = cachedTranslation || localTranslation;
-            if (!translation) return null;
-
-            const translatedText = cachedTranslation
-              ? cachedTranslation.translatedText
-              : localTranslation!.translation;
-            const detectedLang = cachedTranslation
-              ? cachedTranslation.detectedSourceLanguage
-              : localTranslation!.detectedLanguage;
-            const culturalHints = cachedTranslation
-              ? cachedTranslation.culturalHints
-              : localTranslation!.culturalHints;
-            const slangExplanations = cachedTranslation
-              ? cachedTranslation.slangExplanations
-              : localTranslation!.slangExplanations;
+        {/* Show original message and cultural context when user taps "Translated from..." */}
+        {showOriginal && hasTranslation && (() => {
+            const detectedLang = translation!.detectedSourceLanguage || translation!.detectedLanguage;
+            const culturalHints = translation!.culturalHints || [];
+            const slangExplanations = translation!.slangExplanations || [];
 
             return (
               <View
                 className="mt-2 px-4 py-3 rounded-lg"
                 style={{ backgroundColor: "rgba(61, 136, 247, 0.15)" }}
               >
-                {/* Language indicator */}
-                <View className="flex-row items-center mb-3">
+                {/* Header with close button */}
+                <View className="flex-row items-center justify-between mb-3">
                   <Text className="text-xs font-medium text-blue-300">
-                    {getFlagEmoji(detectedLang)} {detectedLang} → 🇺🇸 English
+                    {getFlagEmoji(detectedLang)} Original Message
                   </Text>
+                  <TouchableOpacity onPress={() => setShowOriginal(false)}>
+                    <Text className="text-sm font-semibold text-blue-400">
+                      Hide
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
-                {/* Divider */}
+                {/* Original message */}
                 <View
-                  className="h-px mb-3"
-                  style={{ backgroundColor: "rgba(61, 136, 247, 0.3)" }}
-                />
-
-                {/* Translated text */}
-                <Text className="text-base leading-6 mb-1 text-gray-50">
-                  {translatedText}
-                </Text>
+                  className="mb-3 p-3 rounded-lg"
+                  style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
+                >
+                  <Text className="text-base leading-6 text-gray-200">
+                    {message.content}
+                  </Text>
+                </View>
 
                 {/* Cultural hints */}
                 {culturalHints.length > 0 && (
@@ -362,12 +416,30 @@ const styles = StyleSheet.create({
   messageRow: {
     marginBottom: 12,
     flexDirection: "row",
+    alignItems: "flex-end",
   },
   messageRowOwn: {
     justifyContent: "flex-end",
   },
   messageRowOther: {
     justifyContent: "flex-start",
+  },
+  senderAvatarContainer: {
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  senderAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#3D88F7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  senderAvatarText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#F9FAFB",
   },
   messageWrapper: {
     maxWidth: "75%",
@@ -389,6 +461,18 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "center",
     alignItems: "center",
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3D88F7",
+    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  senderNameWithImage: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
   },
   messageText: {
     fontSize: 16,
@@ -419,5 +503,15 @@ const styles = StyleSheet.create({
     paddingRight: 5,
     color: "#1E40AF",
     letterSpacing: -6,
+  },
+  translationLabel: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  translationLabelText: {
+    fontSize: 11,
+    color: "#93C5FD",
+    fontWeight: "500",
   },
 });
