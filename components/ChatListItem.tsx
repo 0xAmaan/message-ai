@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
+import { Circle, CheckCircle2 } from "lucide-react-native";
 
 interface ChatListItemProps {
   conversation: {
@@ -14,11 +15,17 @@ interface ChatListItemProps {
     createdAt: number;
   };
   currentUserId: string;
+  isEditMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 export const ChatListItem = ({
   conversation,
   currentUserId,
+  isEditMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: ChatListItemProps) => {
   const router = useRouter();
 
@@ -35,6 +42,12 @@ export const ChatListItem = ({
 
   const lastMessage =
     messages && messages.length > 0 ? messages[messages.length - 1] : null;
+
+  // Check if conversation has unread messages
+  const hasUnread = useQuery(api.messages.hasUnreadMessages, {
+    conversationId: conversation._id,
+    userId: currentUserId,
+  });
 
   // For direct chats, find the other user
   const otherUser =
@@ -107,7 +120,11 @@ export const ChatListItem = ({
   };
 
   const handlePress = () => {
-    router.push(`/chat/${conversation._id}` as any);
+    if (isEditMode && onToggleSelect) {
+      onToggleSelect();
+    } else {
+      router.push(`/chat/${conversation._id}` as any);
+    }
   };
 
   if (!participants) {
@@ -130,10 +147,23 @@ export const ChatListItem = ({
 
   return (
     <TouchableOpacity
-      className="flex-row p-4 bg-background-base border-b border-gray-700 active:bg-gray-900"
+      className={`flex-row p-4 border-b border-gray-700 active:bg-gray-900 ${
+        isSelected ? "bg-gray-800" : "bg-background-base"
+      }`}
       onPress={handlePress}
       activeOpacity={0.7}
     >
+      {/* Checkbox (edit mode only) */}
+      {isEditMode && (
+        <View className="justify-center items-center mr-3">
+          {isSelected ? (
+            <CheckCircle2 color="#3D88F7" size={24} fill="#3D88F7" />
+          ) : (
+            <Circle color="#6B7280" size={24} />
+          )}
+        </View>
+      )}
+
       {/* Avatar */}
       <View style={{ position: "relative", marginRight: 12 }}>
         {otherUser?.profilePicUrl ? (
@@ -168,9 +198,14 @@ export const ChatListItem = ({
           >
             {displayName}
           </Text>
-          <Text className="text-sm ml-2 text-gray-400">
-            {formatTime(conversation.lastMessageAt)}
-          </Text>
+          <View className="flex-row items-center">
+            <Text className="text-sm text-gray-400">
+              {formatTime(conversation.lastMessageAt)}
+            </Text>
+            {hasUnread && (
+              <View className="w-2 h-2 rounded-full bg-blue-500 ml-2" />
+            )}
+          </View>
         </View>
 
         <Text className="text-base text-gray-400" numberOfLines={2}>

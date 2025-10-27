@@ -85,8 +85,11 @@ export const generateSmartReplies = action({
 
     // Determine overall formality level from recent messages
     const formalityLevels = translationData
-      .filter((t) => t && t.formality)
-      .map((t) => t!.formality);
+      .filter(
+        (t): t is NonNullable<typeof t> =>
+          t !== null && t.formality !== undefined,
+      )
+      .map((t) => t.formality as string);
 
     const dominantFormality =
       formalityLevels.length > 0

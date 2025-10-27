@@ -22,9 +22,11 @@ export const sendMessage = mutation({
       deliveredTo: [args.senderId],
     });
 
-    // Update conversation's last message time
+    // Update conversation's last message time and clear deletedBy
+    // (restore conversation for users who soft-deleted it)
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: Date.now(),
+      deletedBy: [], // Clear deletedBy so conversation reappears
     });
 
     // Schedule batch translation to all 10 languages in background (non-blocking)
@@ -160,5 +162,69 @@ export const getImageUrl = query({
   args: { imageId: v.id("_storage") },
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.imageId);
+  },
+});
+
+// Check if conversation has unread messages for a user
+export const hasUnreadMessages = query({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .collect();
+
+    // Check if any message is not read by this user (and not sent by them)
+    const hasUnread = messages.some(
+      (msg) =>
+        msg.senderId !== args.userId && !msg.readBy.includes(args.userId),
+    );
+
+    return hasUnread;
+  },
+});
+
+// Mark all messages in multiple conversations as read
+export const markMultipleConversationsAsRead = mutation({
+  args: {
+    conversationIds: v.array(v.id("conversations")),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // For each conversation, mark all messages as read
+    for (const conversationId of args.conversationIds) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) =>
+          q.eq("conversationId", conversationId),
+        )
+        .collect();
+
+      // Mark all messages as read
+      await Promise.all(
+        messages.map((msg) => {
+          const updates: any = {};
+
+          // Add to readBy if not already there
+          if (!msg.readBy.includes(args.userId)) {
+            updates.readBy = [...msg.readBy, args.userId];
+          }
+
+          // Add to deliveredTo if not already there
+          if (!msg.deliveredTo.includes(args.userId)) {
+            updates.deliveredTo = [...msg.deliveredTo, args.userId];
+          }
+
+          if (Object.keys(updates).length > 0) {
+            return ctx.db.patch(msg._id, updates);
+          }
+        }),
+      );
+    }
   },
 });

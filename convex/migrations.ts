@@ -1,4 +1,4 @@
-import { internalAction, internalMutation, query } from "./_generated/server";
+import { internalAction, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
@@ -8,7 +8,16 @@ export const migrateExistingMessages = internalAction({
     batchSize: v.optional(v.number()), // How many messages to process per batch (default: 10)
     dryRun: v.optional(v.boolean()), // If true, just counts messages without translating
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    totalMessages: number;
+    translated: number;
+    failed: number;
+    skipped: number;
+    dryRun: boolean;
+  }> => {
     const batchSize = args.batchSize || 10;
     const dryRun = args.dryRun || false;
 
@@ -16,9 +25,10 @@ export const migrateExistingMessages = internalAction({
     console.log(`Batch size: ${batchSize}, Dry run: ${dryRun}`);
 
     // Get all messages that need migration
-    const messagesToMigrate = await ctx.runQuery(
-      internal.migrations.getMessagesNeedingMigration,
-    );
+    const messagesToMigrate: Array<{
+      _id: any;
+      content: string;
+    }> = await ctx.runQuery(internal.migrations.getMessagesNeedingMigration);
 
     console.log(`📊 Found ${messagesToMigrate.length} messages to migrate`);
 
@@ -99,7 +109,7 @@ export const migrateExistingMessages = internalAction({
 });
 
 // Get all messages that need migration (no detectedSourceLanguage)
-export const getMessagesNeedingMigration = internalMutation({
+export const getMessagesNeedingMigration = internalQuery({
   handler: async (ctx) => {
     const allMessages = await ctx.db.query("messages").collect();
 

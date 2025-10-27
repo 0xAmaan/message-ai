@@ -27,7 +27,11 @@ const showStatsOnly = args.includes("--stats");
 const batchSizeArg = args.find((arg) => arg.startsWith("--batch-size"));
 const batchSize = batchSizeArg ? parseInt(batchSizeArg.split("=")[1]) : 10;
 
-const siteUrl = CONVEX_URL.replace("/api", "");
+// Convert .convex.cloud (backend API) to .convex.site (HTTP routes)
+const siteUrl = CONVEX_URL.replace("/api", "").replace(
+  ".convex.cloud",
+  ".convex.site",
+);
 
 console.log("🚀 Message Migration Script");
 console.log("============================\n");

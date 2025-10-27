@@ -52,10 +52,12 @@ export const getUserConversations = query({
   handler: async (ctx, args) => {
     const allConversations = await ctx.db.query("conversations").collect();
 
-    // Filter conversations where user is a participant
-    const userConversations = allConversations.filter((conv) =>
-      conv.participants.includes(args.clerkId),
-    );
+    // Filter conversations where user is a participant AND hasn't deleted it
+    const userConversations = allConversations.filter((conv) => {
+      const isParticipant = conv.participants.includes(args.clerkId);
+      const hasDeleted = conv.deletedBy?.includes(args.clerkId) ?? false;
+      return isParticipant && !hasDeleted;
+    });
 
     // Sort by last message time
     return userConversations.sort((a, b) => b.lastMessageAt - a.lastMessageAt);
@@ -99,5 +101,24 @@ export const getConversationParticipants = query({
     const filteredParticipants = participants.filter((p) => p !== null);
 
     return filteredParticipants;
+  },
+});
+
+// Soft delete conversation (hide from user's view)
+export const softDeleteConversation = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return;
+
+    const deletedBy = conversation.deletedBy ?? [];
+    if (!deletedBy.includes(args.userId)) {
+      await ctx.db.patch(args.conversationId, {
+        deletedBy: [...deletedBy, args.userId],
+      });
+    }
   },
 });

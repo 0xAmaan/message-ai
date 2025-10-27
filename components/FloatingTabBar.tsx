@@ -17,6 +17,11 @@ export const FloatingTabBar = ({
   const indicatorPosition = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
 
+  // Check if current route has tabBarVisible set to false
+  const currentRoute = state.routes[state.index];
+  const { options } = descriptors[currentRoute.key];
+  const tabBarVisible = options.tabBarVisible ?? true;
+
   // Calculate tab width accounting for container padding (16px on each side = 32px total)
   const tabCount = state.routes.length;
   const containerWidth = windowWidth - 32; // Subtract horizontal padding
@@ -31,6 +36,11 @@ export const FloatingTabBar = ({
       friction: 12,
     }).start();
   }, [state.index, indicatorPosition]);
+
+  // Hide tab bar if tabBarVisible is false
+  if (!tabBarVisible) {
+    return null;
+  }
 
   return (
     <View

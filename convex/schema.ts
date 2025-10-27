@@ -21,6 +21,7 @@ export default defineSchema({
     type: v.union(v.literal("direct"), v.literal("group")),
     lastMessageAt: v.number(),
     createdAt: v.number(),
+    deletedBy: v.optional(v.array(v.string())), // array of clerkIds who soft-deleted this conversation
   }).index("by_participant", ["participants"]),
 
   // Messages
