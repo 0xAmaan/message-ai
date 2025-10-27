@@ -5,6 +5,7 @@ export interface Language {
   flag: string; // Flag emoji
 }
 
+// Top 10 most common languages - all messages are pre-translated to these
 export const SUPPORTED_LANGUAGES: Language[] = [
   { code: "English", name: "English", flag: "🇺🇸" },
   { code: "Spanish", name: "Spanish", flag: "🇪🇸" },
@@ -12,20 +13,10 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: "German", name: "German", flag: "🇩🇪" },
   { code: "Chinese", name: "Chinese", flag: "🇨🇳" },
   { code: "Japanese", name: "Japanese", flag: "🇯🇵" },
-  { code: "Korean", name: "Korean", flag: "🇰🇷" },
   { code: "Arabic", name: "Arabic", flag: "🇸🇦" },
   { code: "Hindi", name: "Hindi", flag: "🇮🇳" },
   { code: "Portuguese", name: "Portuguese", flag: "🇵🇹" },
   { code: "Russian", name: "Russian", flag: "🇷🇺" },
-  { code: "Italian", name: "Italian", flag: "🇮🇹" },
-  { code: "Dutch", name: "Dutch", flag: "🇳🇱" },
-  { code: "Turkish", name: "Turkish", flag: "🇹🇷" },
-  { code: "Polish", name: "Polish", flag: "🇵🇱" },
-  { code: "Swedish", name: "Swedish", flag: "🇸🇪" },
-  { code: "Vietnamese", name: "Vietnamese", flag: "🇻🇳" },
-  { code: "Thai", name: "Thai", flag: "🇹🇭" },
-  { code: "Indonesian", name: "Indonesian", flag: "🇮🇩" },
-  { code: "Hebrew", name: "Hebrew", flag: "🇮🇱" },
 ];
 
 export const DEFAULT_LANGUAGE = "English";

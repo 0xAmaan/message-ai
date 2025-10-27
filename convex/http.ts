@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { runMigration, migrationStats } from "./runMigration";
 
 const http = httpRouter();
 
@@ -62,6 +63,22 @@ http.route({
       );
     }
   }),
+});
+
+// Migration endpoint - Run translation migration
+// Usage: POST https://your-convex-url/runMigration?dryRun=true&batchSize=10
+http.route({
+  path: "/runMigration",
+  method: "POST",
+  handler: runMigration,
+});
+
+// Migration stats endpoint - Check migration progress
+// Usage: GET https://your-convex-url/migrationStats
+http.route({
+  path: "/migrationStats",
+  method: "GET",
+  handler: migrationStats,
 });
 
 export default http;

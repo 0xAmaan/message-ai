@@ -9,18 +9,22 @@ const SYSTEM_PROMPT = `You are the International Communicator - an AI assistant 
 Your role:
 - Analyze the conversation context and relationship dynamics
 - Generate 3 smart reply suggestions that are culturally sensitive
-- Adapt tone based on conversation formality and context
+- **MATCH THE FORMALITY LEVEL** of the conversation (formal, casual, or neutral)
 - Consider communication styles and relationship between participants
+- Use detected formality and cultural hints from recent messages
 
 Guidelines:
 - Keep suggestions concise (under 15 words each)
-- Offer variety in tone (friendly, professional, empathetic)
+- Offer variety in tone while MAINTAINING the conversation's formality level
+- If conversation is formal, use formal language (no contractions, polite phrasing)
+- If conversation is casual, use casual language (contractions OK, friendly tone)
 - Respect cultural communication differences
 - Never be overly familiar or presumptuous
 - When uncertain about cultural context, default to respectful neutrality
 
 Output format: Return ONLY a JSON array of exactly 3 string suggestions, no explanation or additional text.
-Example: ["Thanks for letting me know!", "Sounds good to me", "I appreciate that"]`;
+Example (casual): ["Thanks for letting me know!", "Sounds good to me", "I appreciate that"]
+Example (formal): ["Thank you for informing me.", "That sounds acceptable.", "I appreciate your consideration."]`;
 
 // Generate smart reply suggestions using Anthropic Claude
 export const generateSmartReplies = action({
@@ -60,6 +64,35 @@ export const generateSmartReplies = action({
       return null;
     }
 
+    // Get current user's preferred language to fetch relevant translations
+    const currentUser = await ctx.runQuery(api.users.getCurrentUser, {
+      clerkId: args.currentUserId,
+    });
+    const preferredLanguage = currentUser?.preferredLanguage || "English";
+
+    // Fetch translation data for recent messages to determine formality
+    const translationDataPromises = messages.map(async (msg) => {
+      if (typeof msg._id === "string") return null;
+
+      const translation = await ctx.runQuery(api.translations.getTranslation, {
+        messageId: msg._id,
+        targetLanguage: preferredLanguage,
+      });
+      return translation;
+    });
+
+    const translationData = await Promise.all(translationDataPromises);
+
+    // Determine overall formality level from recent messages
+    const formalityLevels = translationData
+      .filter((t) => t && t.formality)
+      .map((t) => t!.formality);
+
+    const dominantFormality =
+      formalityLevels.length > 0
+        ? formalityLevels[formalityLevels.length - 1] // Use most recent
+        : "neutral";
+
     // Build conversation context for the AI
     const conversationContext = messages
       .map((msg: Doc<"messages">) => {
@@ -78,7 +111,13 @@ export const generateSmartReplies = action({
         messages: [
           {
             role: "user",
-            content: `Based on this conversation, generate 3 contextually appropriate reply suggestions:\n\n${conversationContext}`,
+            content: `Based on this conversation, generate 3 contextually appropriate reply suggestions.
+
+DETECTED FORMALITY LEVEL: ${dominantFormality}
+IMPORTANT: Match this formality level in your suggestions!
+
+Conversation:
+${conversationContext}`,
           },
         ],
       });

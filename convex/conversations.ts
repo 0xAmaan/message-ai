@@ -1,6 +1,16 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+// Helper: Calculate if user is online based on lastSeen timestamp
+// User is considered online if lastSeen is within 30 seconds
+const ONLINE_THRESHOLD_MS = 30 * 1000; // 30 seconds
+
+const isUserOnline = (lastSeen: number): boolean => {
+  const now = Date.now();
+  const isOnline = now - lastSeen < ONLINE_THRESHOLD_MS;
+  return isOnline;
+};
+
 // Create or get existing conversation
 export const createOrGetConversation = mutation({
   args: {
@@ -69,13 +79,25 @@ export const getConversationParticipants = query({
 
     const participants = await Promise.all(
       conversation.participants.map(async (clerkId) => {
-        return await ctx.db
+        const user = await ctx.db
           .query("users")
           .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
           .first();
+
+        if (!user) return null;
+
+        // Calculate online status dynamically based on lastSeen
+        const isOnline = isUserOnline(user.lastSeen);
+
+        return {
+          ...user,
+          isOnline, // Override with calculated status
+        };
       }),
     );
 
-    return participants.filter((p) => p !== null);
+    const filteredParticipants = participants.filter((p) => p !== null);
+
+    return filteredParticipants;
   },
 });

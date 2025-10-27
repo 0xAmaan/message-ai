@@ -23,16 +23,6 @@ const ProfileSetupScreen = () => {
 
   const upsertUser = useMutation(api.users.upsertFromClerk);
 
-  // Log user state for debugging
-  useEffect(() => {
-    console.log("Profile setup - User loaded:", isLoaded);
-    console.log("Profile setup - User ID:", user?.id);
-    console.log(
-      "Profile setup - Phone:",
-      user?.primaryPhoneNumber?.phoneNumber,
-    );
-  }, [isLoaded, user]);
-
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -62,7 +52,6 @@ const ProfileSetupScreen = () => {
 
       // Wait for user to be loaded after session activation
       if (!isLoaded || !user) {
-        console.log("Waiting for user to load...");
         Alert.alert("Please wait", "Loading your session...");
         return;
       }
@@ -81,13 +70,6 @@ const ProfileSetupScreen = () => {
         return;
       }
 
-      console.log("Saving profile to Convex...", {
-        clerkId,
-        phoneNumber,
-        name: name.trim(),
-        hasProfileImage: !!profileImage,
-      });
-
       // Save user to Convex - this creates/updates the user record
       await upsertUser({
         clerkId,
@@ -95,8 +77,6 @@ const ProfileSetupScreen = () => {
         name: name.trim(),
         profilePicUrl: profileImage || undefined,
       });
-
-      console.log("Profile saved successfully to Convex!");
 
       // Navigate to tabs - the main chat screen
       router.replace("/(tabs)");

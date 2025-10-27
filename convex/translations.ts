@@ -8,6 +8,52 @@ import Anthropic from "@anthropic-ai/sdk";
 const TRANSLATION_RATE_LIMIT = 50;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+// Top 10 languages for batch translation
+const BATCH_TRANSLATION_LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Chinese",
+  "Japanese",
+  "Arabic",
+  "Hindi",
+  "Portuguese",
+  "Russian",
+];
+
+const BATCH_TRANSLATION_SYSTEM_PROMPT = `You are a professional translator and cultural consultant for the International Communicator messaging app.
+
+Your task: Translate the provided message to ALL 10 specified languages in a single response.
+
+CRITICAL JSON STRUCTURE - You MUST return EXACTLY this format:
+{
+  "detectedSourceLanguage": "ISO_language_name",
+  "translations": {
+    "English": {
+      "text": "translated text here",
+      "culturalHints": ["hint1", "hint2"],
+      "slangExplanations": [{"term": "word", "explanation": "meaning"}],
+      "formality": "formal|casual|neutral"
+    },
+    "Spanish": { ... },
+    ... (repeat for all 10 languages)
+  }
+}
+
+RULES:
+1. If the message is ALREADY in the target language, return the SAME text (don't change it)
+2. If there are NO cultural hints, use EMPTY array: []
+3. If there is NO slang, use EMPTY array: []
+4. Formality MUST be one of: "formal", "casual", or "neutral"
+5. All 10 languages MUST be present in the response
+6. Preserve emojis and formatting exactly
+7. Keep translations natural, not word-for-word
+
+Cultural hints: Only include if genuinely helpful (greetings, idioms, cultural practices)
+Slang: Only include terms a non-native speaker wouldn't understand
+Formality: Analyze the tone and match it in translation`;
+
 const TRANSLATION_SYSTEM_PROMPT = `You are a professional translator and cultural consultant for the International Communicator messaging app.
 
 Your role:
@@ -295,6 +341,142 @@ export const translateMessage = action({
   },
 });
 
+// Batch translate a message to all 10 supported languages at once
+export const batchTranslateMessage = internalAction({
+  args: {
+    messageId: v.id("messages"),
+    messageContent: v.string(),
+  },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ detectedLanguage: string; translationCount: number }> => {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error("ANTHROPIC_API_KEY not configured");
+    }
+
+    try {
+      const anthropic = new Anthropic({ apiKey });
+
+      const response = await anthropic.messages.create({
+        model: "claude-3-5-haiku-20241022",
+        max_tokens: 8000, // Increased for all 10 languages
+        system: BATCH_TRANSLATION_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: `Translate this message to ALL 10 languages (English, Spanish, French, German, Chinese, Japanese, Arabic, Hindi, Portuguese, Russian):\n\n${args.messageContent}`,
+          },
+        ],
+      });
+
+      // Parse the response
+      const content = response.content[0];
+      if (content.type !== "text") {
+        throw new Error("Unexpected response type from Claude");
+      }
+
+      // Extract JSON from the response
+      let jsonText = content.text.trim();
+
+      // Remove markdown code blocks if present
+      if (jsonText.startsWith("```")) {
+        const jsonMatch = jsonText.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[1].trim();
+        }
+      }
+
+      // Extract only the JSON object
+      const firstBrace = jsonText.indexOf("{");
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let endIndex = firstBrace;
+
+        for (let i = firstBrace; i < jsonText.length; i++) {
+          if (jsonText[i] === "{") braceCount++;
+          if (jsonText[i] === "}") braceCount--;
+
+          if (braceCount === 0) {
+            endIndex = i + 1;
+            break;
+          }
+        }
+
+        jsonText = jsonText.substring(firstBrace, endIndex);
+      }
+
+      console.log("Batch translation raw response:", content.text);
+      console.log("Extracted JSON:", jsonText);
+
+      const result = JSON.parse(jsonText);
+
+      // Validate response structure
+      if (
+        !result.detectedSourceLanguage ||
+        !result.translations ||
+        typeof result.translations !== "object"
+      ) {
+        throw new Error("Invalid batch translation format from Claude");
+      }
+
+      const detectedLanguage = result.detectedSourceLanguage;
+      let translationCount = 0;
+
+      // Save each translation to database
+      for (const lang of BATCH_TRANSLATION_LANGUAGES) {
+        const translation = result.translations[lang];
+
+        if (!translation || !translation.text) {
+          console.warn(`Missing translation for ${lang}`);
+          continue;
+        }
+
+        await ctx.runMutation(api.translations.saveTranslation, {
+          messageId: args.messageId,
+          targetLanguage: lang,
+          translatedText: translation.text,
+          detectedSourceLanguage: detectedLanguage,
+          culturalHints: translation.culturalHints || [],
+          slangExplanations: translation.slangExplanations || [],
+          formality: translation.formality || "neutral",
+        });
+
+        translationCount++;
+      }
+
+      console.log(
+        `Batch translated to ${translationCount} languages. Detected: ${detectedLanguage}`,
+      );
+
+      // Update the message with the detected language
+      await ctx.runMutation(api.translations.updateMessageLanguage, {
+        messageId: args.messageId,
+        detectedLanguage,
+      });
+
+      return { detectedLanguage, translationCount };
+    } catch (error) {
+      console.error("Error in batch translation:", error);
+      throw error;
+    }
+  },
+});
+
+// Update message with detected language
+export const updateMessageLanguage = mutation({
+  args: {
+    messageId: v.id("messages"),
+    detectedLanguage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      detectedSourceLanguage: args.detectedLanguage,
+    });
+  },
+});
+
 // Save translation to database
 export const saveTranslation = mutation({
   args: {
@@ -309,6 +491,7 @@ export const saveTranslation = mutation({
         explanation: v.string(),
       }),
     ),
+    formality: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Check if translation already exists
@@ -328,6 +511,7 @@ export const saveTranslation = mutation({
         detectedSourceLanguage: args.detectedSourceLanguage,
         culturalHints: args.culturalHints,
         slangExplanations: args.slangExplanations,
+        formality: args.formality,
         generatedAt: Date.now(),
       });
     } else {
@@ -339,6 +523,7 @@ export const saveTranslation = mutation({
         detectedSourceLanguage: args.detectedSourceLanguage,
         culturalHints: args.culturalHints,
         slangExplanations: args.slangExplanations,
+        formality: args.formality,
         generatedAt: Date.now(),
       });
     }
@@ -454,7 +639,10 @@ export const batchTranslateRecentMessages = action({
     userId: v.string(), // clerkId
     targetLanguage: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ translatedCount: number; conversationCount: number }> => {
     // Get all conversations for this user
     const conversations = await ctx.runQuery(
       api.conversations.getUserConversations,

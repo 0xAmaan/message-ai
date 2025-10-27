@@ -135,14 +135,17 @@ export const ChatListItem = ({
       activeOpacity={0.7}
     >
       {/* Avatar */}
-      <View
-        className={`w-12 h-12 rounded-full mr-3 relative ${otherUser?.isOnline ? "border-2 border-violet-500" : ""}`}
-      >
+      <View style={{ position: "relative", marginRight: 12 }}>
         {otherUser?.profilePicUrl ? (
           <Image
             source={{ uri: otherUser.profilePicUrl }}
-            className="w-12 h-12 rounded-full"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+            }}
             contentFit="cover"
+            cachePolicy="memory-disk"
           />
         ) : (
           <View className="w-12 h-12 rounded-full bg-primary justify-center items-center">

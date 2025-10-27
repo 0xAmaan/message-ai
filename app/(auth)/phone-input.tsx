@@ -51,7 +51,6 @@ const PhoneInputScreen = () => {
 
       // Sign in flow (if sign up failed due to existing phone)
       if (signIn) {
-        console.log("=== STARTING SIGN IN FLOW ===");
         await signIn.create({
           identifier: formattedPhone,
         });
@@ -63,15 +62,12 @@ const PhoneInputScreen = () => {
           )?.phoneNumberId,
         });
 
-        const navParams = {
-          phoneNumber: formattedPhone,
-          isSignUp: "false"
-        };
-        console.log("=== NAVIGATING TO VERIFY-OTP WITH PARAMS:", navParams);
-
         router.push({
           pathname: "/(auth)/verify-otp",
-          params: navParams,
+          params: {
+            phoneNumber: formattedPhone,
+            isSignUp: "false"
+          },
         });
       }
     } catch (error: any) {

@@ -1,8 +1,15 @@
 import { ChevronLeft } from "lucide-react-native";
 import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 
-const Header = ({ navigation, title }: { navigation: any; title?: string }) => {
+interface HeaderProps {
+  navigation: any;
+  title?: string;
+  profilePicUrl?: string;
+}
+
+const Header = ({ navigation, title, profilePicUrl }: HeaderProps) => {
   return (
     <View className="bg-background">
       <SafeAreaView edges={["top"]}>
@@ -15,9 +22,24 @@ const Header = ({ navigation, title }: { navigation: any; title?: string }) => {
             <Text className="text-lg text-blue-500">Back</Text>
           </TouchableOpacity>
           {title && (
-            <Text className="text-xl font-bold text-gray-50 flex-1 text-center mr-12">
-              {title}
-            </Text>
+            <View className="flex-1 flex-row items-center justify-center mr-12">
+              {profilePicUrl && (
+                <Image
+                  source={{ uri: profilePicUrl }}
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 13,
+                    marginRight: 8,
+                  }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              )}
+              <Text className="text-xl font-bold text-gray-50">
+                {title}
+              </Text>
+            </View>
           )}
         </View>
       </SafeAreaView>

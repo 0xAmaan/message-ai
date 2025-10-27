@@ -1,6 +1,16 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 
+// Helper: Calculate if user is online based on lastSeen timestamp
+// User is considered online if lastSeen is within 30 seconds
+const ONLINE_THRESHOLD_MS = 30 * 1000; // 30 seconds
+
+const isUserOnline = (lastSeen: number): boolean => {
+  const now = Date.now();
+  const isOnline = now - lastSeen < ONLINE_THRESHOLD_MS;
+  return isOnline;
+};
+
 // Create or update user from Clerk webhook (internal - called by webhook)
 export const upsertFromClerkInternal = internalMutation({
   args: {
@@ -81,10 +91,18 @@ export const upsertFromClerk = mutation({
 export const getCurrentUser = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .first();
+
+    if (!user) return null;
+
+    // Calculate online status dynamically
+    return {
+      ...user,
+      isOnline: isUserOnline(user.lastSeen),
+    };
   },
 });
 
@@ -92,10 +110,18 @@ export const getCurrentUser = query({
 export const findByPhone = query({
   args: { phoneNumber: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_phone", (q) => q.eq("phoneNumber", args.phoneNumber))
       .first();
+
+    if (!user) return null;
+
+    // Calculate online status dynamically
+    return {
+      ...user,
+      isOnline: isUserOnline(user.lastSeen),
+    };
   },
 });
 
@@ -121,7 +147,7 @@ export const updateProfile = mutation({
   },
 });
 
-// Update online status
+// Update online status (legacy - keeping for backward compatibility)
 export const updateOnlineStatus = mutation({
   args: {
     clerkId: v.string(),
@@ -142,10 +168,36 @@ export const updateOnlineStatus = mutation({
   },
 });
 
+// Heartbeat - updates lastSeen timestamp (called every 15 seconds)
+export const heartbeat = mutation({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, {
+      lastSeen: Date.now(),
+      isOnline: true, // Set to true when heartbeat is received
+    });
+  },
+});
+
 // Get all users (for contact list)
 export const listUsers = query({
   handler: async (ctx) => {
-    return await ctx.db.query("users").collect();
+    const users = await ctx.db.query("users").collect();
+
+    // Calculate online status dynamically for each user
+    return users.map((user) => ({
+      ...user,
+      isOnline: isUserOnline(user.lastSeen),
+    }));
   },
 });
 

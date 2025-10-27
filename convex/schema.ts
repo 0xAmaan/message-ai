@@ -32,6 +32,7 @@ export default defineSchema({
     createdAt: v.number(),
     readBy: v.array(v.string()), // array of clerkIds
     deliveredTo: v.array(v.string()), // array of clerkIds
+    detectedSourceLanguage: v.optional(v.string()), // Auto-detected language of original message
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_sender", ["senderId"]),
@@ -67,6 +68,7 @@ export default defineSchema({
         explanation: v.string(),
       }),
     ),
+    formality: v.optional(v.string()), // "formal", "casual", or "neutral"
     generatedAt: v.number(),
   }).index("by_message_language", ["messageId", "targetLanguage"]),
 

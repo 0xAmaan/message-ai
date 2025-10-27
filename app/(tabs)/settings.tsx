@@ -76,11 +76,14 @@ const SettingsScreen = () => {
 
   // Handle profile picture upload
   const handlePickImage = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      return;
+    }
 
     try {
       // Request permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       if (status !== "granted") {
         Alert.alert("Permission needed", "Please grant photo library access to change your profile picture.");
         return;
@@ -94,7 +97,13 @@ const SettingsScreen = () => {
         quality: 0.7,
       });
 
-      if (result.canceled || !result.assets[0]) return;
+      if (result.canceled) {
+        return;
+      }
+
+      if (!result.assets || !result.assets[0]) {
+        return;
+      }
 
       setIsUploadingImage(true);
 
@@ -111,21 +120,24 @@ const SettingsScreen = () => {
       });
 
       if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error("❌ Upload failed:", errorText);
         throw new Error("Failed to upload image");
       }
 
-      const { storageId } = await uploadResponse.json();
+      const uploadResult = await uploadResponse.json();
+      const { storageId } = uploadResult;
 
       // Update user profile with new image
-      await updateProfilePicture({
+      const imageUrl = await updateProfilePicture({
         clerkId: user.id,
         storageId,
       });
 
       Alert.alert("Success", "Profile picture updated!");
     } catch (error) {
-      console.error("Failed to update profile picture:", error);
-      Alert.alert("Error", "Failed to update profile picture. Please try again.");
+      console.error("❌ Failed to update profile picture:", error);
+      Alert.alert("Error", `Failed to update profile picture: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsUploadingImage(false);
     }
@@ -144,14 +156,10 @@ const SettingsScreen = () => {
       });
 
       // Batch translate recent messages in background
-      const result = await batchTranslate({
+      await batchTranslate({
         userId: user.id,
         targetLanguage: languageCode,
       });
-
-      console.log(
-        `Translated ${result.translatedCount} messages across ${result.conversationCount} conversations`,
-      );
     } catch (error) {
       console.error("Failed to update language:", error);
     } finally {
@@ -196,7 +204,6 @@ const SettingsScreen = () => {
               </View>
             )}
           </View>
-          <Text style={styles.changePhotoText}>Tap to change photo</Text>
         </TouchableOpacity>
 
         {/* User Name */}
@@ -298,7 +305,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 8,
+    marginBottom: 20,
     position: "relative",
   },
   profilePicture: {
@@ -319,11 +326,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",
     alignItems: "center",
-  },
-  changePhotoText: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 12,
   },
   profileInitial: {
     fontSize: 40,

@@ -27,15 +27,14 @@ export const sendMessage = mutation({
       lastMessageAt: Date.now(),
     });
 
-    // Schedule auto-translation for recipients in background (non-blocking)
+    // Schedule batch translation to all 10 languages in background (non-blocking)
     if (args.content.trim()) {
       await ctx.scheduler.runAfter(
         0,
-        internal.translations.autoTranslateForRecipients,
+        internal.translations.batchTranslateMessage,
         {
           messageId,
-          conversationId: args.conversationId,
-          senderId: args.senderId,
+          messageContent: args.content,
         },
       );
     }

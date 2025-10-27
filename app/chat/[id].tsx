@@ -90,6 +90,14 @@ const ChatScreen = () => {
   // Actions
   const generateSmartReplies = useAction(api.smartReplies.generateSmartReplies);
 
+  // Get other user for profile picture (direct chats only)
+  const otherUser = (() => {
+    if (!conversation || !participants || conversation.type !== "direct") {
+      return null;
+    }
+    return participants.find((p) => p.clerkId !== user?.id);
+  })();
+
   // Get display name for chat with capitalization
   const displayName = (() => {
     if (!conversation || !participants) return "Chat";
@@ -470,8 +478,8 @@ const ChatScreen = () => {
 
   if (!conversation || !messages || !participants) {
     return (
-      <View className="flex-1 bg-background-base">
-        <View className="flex-1 justify-center items-center">
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3D88F7" />
         </View>
       </View>
@@ -479,20 +487,24 @@ const ChatScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-background-base">
-      <Header navigation={navigation} title={displayName} />
+    <View style={styles.container}>
+      <Header
+        navigation={navigation}
+        title={displayName}
+        profilePicUrl={otherUser?.profilePicUrl}
+      />
 
       {/* Network Status Banner */}
       {!isOnline && (
-        <View className="px-4 py-2 bg-yellow-900/50 border-b border-yellow-700/50">
-          <Text className="text-sm text-yellow-200 text-center">
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineBannerText}>
             ⚠️ No internet connection. Messages will be sent when back online.
           </Text>
         </View>
       )}
 
       <KeyboardAvoidingView
-        className="flex-1"
+        style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
@@ -531,7 +543,7 @@ const ChatScreen = () => {
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: false })
           }
-          className="flex-1 bg-background-base"
+          style={styles.messagesList}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>💬</Text>
@@ -543,8 +555,8 @@ const ChatScreen = () => {
           }
           ListFooterComponent={
             typingUsers && typingUsers.length > 0 ? (
-              <View className="px-4 py-2">
-                <Text className="text-sm italic text-gray-400">
+              <View style={styles.typingIndicatorContainer}>
+                <Text style={styles.typingIndicatorText}>
                   {typingUsers[0].name} is typing...
                 </Text>
               </View>
@@ -583,6 +595,43 @@ const ChatScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  offlineBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "rgba(120, 53, 15, 0.5)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(161, 98, 7, 0.5)",
+  },
+  offlineBannerText: {
+    fontSize: 14,
+    color: "#FEF3C7",
+    textAlign: "center",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  messagesList: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  typingIndicatorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  typingIndicatorText: {
+    fontSize: 14,
+    fontStyle: "italic",
+    color: "#9CA3AF",
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

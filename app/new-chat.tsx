@@ -161,8 +161,9 @@ const NewChatScreen = () => {
                   {item.profilePicUrl ? (
                     <Image
                       source={{ uri: item.profilePicUrl }}
-                      style={styles.profilePicture}
+                      style={styles.profileImage}
                       contentFit="cover"
+                      cachePolicy="memory-disk"
                     />
                   ) : (
                     <View style={styles.profilePicture}>
@@ -251,6 +252,11 @@ const styles = StyleSheet.create({
     height: 40,
     marginRight: 16,
     position: "relative",
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   profilePicture: {
     width: 40,

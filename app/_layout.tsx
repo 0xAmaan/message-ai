@@ -28,30 +28,48 @@ const RootLayoutNav = () => {
   const responseListener = useRef<Notifications.Subscription | undefined>(
     undefined,
   );
+  const heartbeat = useMutation(api.users.heartbeat);
   const updateOnlineStatus = useMutation(api.users.updateOnlineStatus);
 
-  // Update online status based on app state
+  // Heartbeat system: ping server every 15 seconds while app is active
   useEffect(() => {
     if (!isSignedIn || !user?.id) return;
 
-    // Set initial online status
-    updateOnlineStatus({ clerkId: user.id, isOnline: true });
+    console.log("[Heartbeat] Starting heartbeat for user:", user.id);
+
+    // Send initial heartbeat
+    heartbeat({ clerkId: user.id });
+
+    // Set up interval for heartbeat (every 15 seconds)
+    const heartbeatInterval = setInterval(() => {
+      const appState = AppState.currentState;
+      if (appState === "active") {
+        console.log("[Heartbeat] Sending heartbeat ping");
+        heartbeat({ clerkId: user.id });
+      }
+    }, 15000); // 15 seconds
 
     // Listen to app state changes
     const subscription = AppState.addEventListener("change", (nextAppState) => {
+      console.log("[Heartbeat] App state changed to:", nextAppState);
       if (nextAppState === "active") {
-        updateOnlineStatus({ clerkId: user.id, isOnline: true });
+        // Send heartbeat immediately when returning to foreground
+        heartbeat({ clerkId: user.id });
       } else if (nextAppState === "background" || nextAppState === "inactive") {
+        // Set offline when going to background (best effort)
         updateOnlineStatus({ clerkId: user.id, isOnline: false });
       }
     });
 
-    // Cleanup: set offline when unmounting
+    // Cleanup
     return () => {
+      console.log("[Heartbeat] Cleaning up heartbeat for user:", user.id);
+      clearInterval(heartbeatInterval);
       subscription.remove();
+      // Best-effort offline status (may not execute if app is force-quit)
       updateOnlineStatus({ clerkId: user.id, isOnline: false });
     };
-  }, [isSignedIn, user?.id, updateOnlineStatus]);
+  }, [isSignedIn, user?.id, heartbeat, updateOnlineStatus]);
 
   // Set up push notifications
   useEffect(() => {

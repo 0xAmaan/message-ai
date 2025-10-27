@@ -48,31 +48,22 @@ const UsernameSetupScreen = () => {
         return;
       }
 
-      console.log("Updating sign-up with username:", username);
-
       // Update the sign-up with the username
       const updatedSignUp = await signUp.update({
         username: username.trim(),
       });
-
-      console.log("Updated sign-up status:", updatedSignUp.status);
-      console.log("Created session ID:", updatedSignUp.createdSessionId);
-      console.log("Missing fields:", updatedSignUp.missingFields);
 
       // Check if sign-up is complete
       if (updatedSignUp.status === "complete") {
         if (updatedSignUp.createdSessionId) {
           // Set the session as active
           await setActive({ session: updatedSignUp.createdSessionId });
-          console.log("Session activated with username!");
 
           // Get the user data from the sign-up
           const phoneNumber = updatedSignUp.phoneNumber || "";
           const clerkUserId = updatedSignUp.createdUserId;
 
           if (clerkUserId) {
-            console.log("Creating initial user record in Convex...");
-
             // Create the user record in Convex immediately with username
             // This ensures the user exists in Convex even if they skip profile setup
             try {
@@ -81,8 +72,6 @@ const UsernameSetupScreen = () => {
                 phoneNumber: phoneNumber,
                 name: username, // Use username as temporary name
               });
-
-              console.log("User created in Convex successfully!");
             } catch (convexError: any) {
               console.error("Failed to create user in Convex:", convexError);
               // Don't block the flow if Convex fails - user can update later
@@ -96,10 +85,6 @@ const UsernameSetupScreen = () => {
         }
       } else if (updatedSignUp.status === "missing_requirements") {
         // Still missing other requirements
-        console.log(
-          "Still missing fields after username:",
-          updatedSignUp.missingFields,
-        );
         Alert.alert(
           "Additional Information Required",
           `Please provide: ${updatedSignUp.missingFields?.join(", ") || "additional information"}`,

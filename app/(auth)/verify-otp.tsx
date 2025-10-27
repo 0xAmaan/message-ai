@@ -13,11 +13,6 @@ const VerifyOTPScreen = () => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  console.log("=== VERIFY OTP SCREEN LOADED ===");
-  console.log("Raw params:", JSON.stringify(params));
-  console.log("params.phoneNumber type:", typeof params.phoneNumber);
-  console.log("params.isSignUp type:", typeof params.isSignUp);
-
   // Handle params that might be arrays or undefined
   const phoneNumber = typeof params.phoneNumber === "string"
     ? params.phoneNumber
@@ -30,9 +25,6 @@ const VerifyOTPScreen = () => {
     : Array.isArray(params.isSignUp)
       ? params.isSignUp[0] === "true"
       : true;
-
-  console.log("Parsed phoneNumber:", phoneNumber);
-  console.log("Parsed isSigningUp:", isSigningUp);
 
   const handleVerify = async () => {
     if (isSigningUp && (!signUpLoaded || !signUp)) return;

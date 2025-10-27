@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 
 const ContactsScreen = () => {
   const { user } = useUser();
@@ -131,14 +133,23 @@ const ContactsScreen = () => {
               activeOpacity={0.7}
             >
               {/* Profile Picture */}
-              <View className="w-10 h-10 rounded-full bg-primary justify-center items-center mr-4 relative">
-                <Text className="text-base font-semibold text-gray-50">
-                  {item.name.charAt(0).toUpperCase()}
-                </Text>
-                {/* Online Indicator */}
-                {item.isOnline && (
-                  <View className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background-base" />
+              <View style={styles.profilePictureContainer}>
+                {item.profilePicUrl ? (
+                  <Image
+                    source={{ uri: item.profilePicUrl }}
+                    style={styles.profileImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <View style={styles.profilePicture}>
+                    <Text style={styles.profileInitial}>
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
                 )}
+                {/* Online Indicator */}
+                {item.isOnline && <View style={styles.onlineIndicator} />}
               </View>
 
               {/* User Info */}
@@ -169,5 +180,43 @@ const ContactsScreen = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  profilePictureContainer: {
+    width: 40,
+    height: 40,
+    marginRight: 16,
+    position: "relative",
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  profilePicture: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#3D88F7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileInitial: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#F9FAFB",
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#1F2937",
+  },
+});
 
 export default ContactsScreen;

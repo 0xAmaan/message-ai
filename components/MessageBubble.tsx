@@ -3,14 +3,12 @@ import {
   Text,
   View,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
 import { Image } from "expo-image";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { TranslateButton } from "./TranslateButton";
 import { useState } from "react";
 
 interface MessageBubbleProps {
@@ -42,13 +40,6 @@ export const MessageBubble = ({
   isGroupChat,
 }: MessageBubbleProps) => {
   const [showOriginal, setShowOriginal] = useState(false); // Toggle to show original when translation is displayed
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [localTranslation, setLocalTranslation] = useState<{
-    translation: string;
-    detectedLanguage: string;
-    culturalHints: string[];
-    slangExplanations: { term: string; explanation: string }[];
-  } | null>(null);
 
   // Get image URL if message has an image
   const imageUrl = useQuery(
@@ -75,9 +66,6 @@ export const MessageBubble = ({
         },
   );
 
-  // Translation action
-  const translateMessage = useAction(api.translations.translateMessage);
-
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", {
@@ -91,38 +79,6 @@ export const MessageBubble = ({
   const readByOthers = message.readBy.filter(
     (id) => id !== message.senderId,
   ).length;
-
-  const handleTranslate = async () => {
-    // Don't translate if missing required data or if it's an optimistic message
-    const isOptimisticMessage =
-      typeof message._id === "string" && message._id.startsWith("temp-");
-
-    if (isOptimisticMessage || !currentUserId || !message.content.trim()) {
-      return;
-    }
-
-    setIsTranslating(true);
-    try {
-      const result = await translateMessage({
-        messageId: message._id as Id<"messages">,
-        targetLanguage: preferredLanguage,
-        userId: currentUserId,
-      });
-
-      if (result) {
-        // Store the translation locally
-        setLocalTranslation(result);
-      }
-    } catch (error) {
-      console.error("Translation error:", error);
-      Alert.alert(
-        "Translation Failed",
-        error instanceof Error ? error.message : "Failed to translate message",
-      );
-    } finally {
-      setIsTranslating(false);
-    }
-  };
 
   // Get flag emoji for language code
   const getFlagEmoji = (languageCode: string): string => {
@@ -145,24 +101,8 @@ export const MessageBubble = ({
     return languageToFlag[code] || "🌐";
   };
 
-  // Determine if we have a translation available
-  const isOptimisticMessage =
-    typeof message._id === "string" && message._id.startsWith("temp-");
-
-  const translation = cachedTranslation || localTranslation;
-  const hasTranslation = !!translation;
-
-  // Show translate button only if:
-  // 1. Not user's own message
-  // 2. Has text content
-  // 3. Not an optimistic message
-  // 4. No translation available yet
-  const showTranslateButton =
-    !isOwnMessage &&
-    currentUserId &&
-    message.content.trim().length > 0 &&
-    !isOptimisticMessage &&
-    !hasTranslation;
+  // Determine if we have a translation available (batch translation runs in background)
+  const hasTranslation = !!cachedTranslation;
 
   // Capitalize sender name for group chats
   const capitalizedSenderName = senderName
@@ -185,8 +125,9 @@ export const MessageBubble = ({
           {senderProfilePicUrl ? (
             <Image
               source={{ uri: senderProfilePicUrl }}
-              style={styles.senderAvatar}
+              style={styles.senderAvatarImage}
               contentFit="cover"
+              cachePolicy="memory-disk"
             />
           ) : (
             <View style={styles.senderAvatar}>
@@ -199,9 +140,11 @@ export const MessageBubble = ({
       )}
 
       <View style={styles.messageWrapper}>
-        {/* Sender name for group chat messages from others */}
-        {isGroupChat && !isOwnMessage && (
-          <Text style={styles.senderName}>{capitalizedSenderName}</Text>
+        {/* Sender name above bubble for group chats */}
+        {isGroupChat && !isOwnMessage && senderName && (
+          <Text style={styles.senderNameAboveBubble}>
+            {capitalizedSenderName}
+          </Text>
         )}
 
         <View
@@ -230,7 +173,7 @@ export const MessageBubble = ({
               {imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
-                  style={{ width: 200, height: 200 }}
+                  style={styles.messageImage}
                   contentFit="cover"
                 />
               ) : (
@@ -239,18 +182,6 @@ export const MessageBubble = ({
                 </View>
               )}
             </View>
-          )}
-
-          {/* Sender name for group chats */}
-          {senderName && !isOwnMessage && (
-            <Text
-              style={[
-                styles.senderName,
-                message.imageId && styles.senderNameWithImage,
-              ]}
-            >
-              {capitalizedSenderName}
-            </Text>
           )}
 
           {/* Text content if present */}
@@ -268,12 +199,12 @@ export const MessageBubble = ({
                 >
                   <Text style={styles.translationLabelText}>
                     {getFlagEmoji(
-                      translation!.detectedSourceLanguage ||
-                        translation!.detectedLanguage,
+                      cachedTranslation!.detectedSourceLanguage ||
+                        cachedTranslation!.detectedLanguage,
                     )}{" "}
                     Translated from{" "}
-                    {translation!.detectedSourceLanguage ||
-                      translation!.detectedLanguage}{" "}
+                    {cachedTranslation!.detectedSourceLanguage ||
+                      cachedTranslation!.detectedLanguage}{" "}
                     🌐
                   </Text>
                 </TouchableOpacity>
@@ -286,7 +217,7 @@ export const MessageBubble = ({
                 ]}
               >
                 {hasTranslation && !showOriginal
-                  ? translation!.translatedText || translation!.translation
+                  ? cachedTranslation!.translatedText
                   : message.content}
               </Text>
             </>
@@ -317,53 +248,41 @@ export const MessageBubble = ({
 
         {/* Show original message and cultural context when user taps "Translated from..." */}
         {showOriginal && hasTranslation && (() => {
-            const detectedLang = translation!.detectedSourceLanguage || translation!.detectedLanguage;
-            const culturalHints = translation!.culturalHints || [];
-            const slangExplanations = translation!.slangExplanations || [];
+            const detectedLang = cachedTranslation!.detectedSourceLanguage;
+            const culturalHints = cachedTranslation!.culturalHints || [];
+            const slangExplanations = cachedTranslation!.slangExplanations || [];
 
             return (
-              <View
-                className="mt-2 px-4 py-3 rounded-lg"
-                style={{ backgroundColor: "rgba(61, 136, 247, 0.15)" }}
-              >
+              <View style={styles.originalMessageContainer}>
                 {/* Header with close button */}
-                <View className="flex-row items-center justify-between mb-3">
-                  <Text className="text-xs font-medium text-blue-300">
+                <View style={styles.originalMessageHeader}>
+                  <Text style={styles.originalMessageHeaderText}>
                     {getFlagEmoji(detectedLang)} Original Message
                   </Text>
                   <TouchableOpacity onPress={() => setShowOriginal(false)}>
-                    <Text className="text-sm font-semibold text-blue-400">
+                    <Text style={styles.hideButtonText}>
                       Hide
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* Original message */}
-                <View
-                  className="mb-3 p-3 rounded-lg"
-                  style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
-                >
-                  <Text className="text-base leading-6 text-gray-200">
+                <View style={styles.originalMessageContent}>
+                  <Text style={styles.originalMessageText}>
                     {message.content}
                   </Text>
                 </View>
 
                 {/* Cultural hints */}
                 {culturalHints.length > 0 && (
-                  <View
-                    className="mt-3 pt-3"
-                    style={{
-                      borderTopWidth: 1,
-                      borderTopColor: "rgba(61, 136, 247, 0.3)",
-                    }}
-                  >
-                    <Text className="text-xs font-semibold mb-2 text-blue-300">
+                  <View style={styles.culturalHintsContainer}>
+                    <Text style={styles.culturalHintsTitle}>
                       ℹ️ Cultural Context:
                     </Text>
                     {culturalHints.map((hint, index) => (
                       <Text
                         key={index}
-                        className="text-xs leading-5 mb-1.5 pl-1 text-indigo-100"
+                        style={styles.culturalHintText}
                       >
                         • {hint}
                       </Text>
@@ -373,22 +292,16 @@ export const MessageBubble = ({
 
                 {/* Slang explanations */}
                 {slangExplanations.length > 0 && (
-                  <View
-                    className="mt-3 pt-3"
-                    style={{
-                      borderTopWidth: 1,
-                      borderTopColor: "rgba(61, 136, 247, 0.3)",
-                    }}
-                  >
-                    <Text className="text-xs font-semibold mb-2 text-yellow-400">
+                  <View style={styles.slangContainer}>
+                    <Text style={styles.slangTitle}>
                       📚 Slang & Idioms:
                     </Text>
                     {slangExplanations.map((item, index) => (
                       <Text
                         key={index}
-                        className="text-xs leading-5 mb-1.5 pl-1 text-yellow-100"
+                        style={styles.slangText}
                       >
-                        • <Text className="font-semibold">{item.term}</Text> -{" "}
+                        • <Text style={styles.slangTerm}>{item.term}</Text> -{" "}
                         {item.explanation}
                       </Text>
                     ))}
@@ -397,16 +310,6 @@ export const MessageBubble = ({
               </View>
             );
           })()}
-
-        {/* Translate button */}
-        {showTranslateButton && (
-          <TranslateButton
-            isTranslating={isTranslating}
-            isTranslated={showTranslation}
-            onPress={handleTranslate}
-            isOwnMessage={isOwnMessage}
-          />
-        )}
       </View>
     </View>
   );
@@ -428,6 +331,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 4,
   },
+  senderAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
   senderAvatar: {
     width: 32,
     height: 32,
@@ -444,6 +352,13 @@ const styles = StyleSheet.create({
   messageWrapper: {
     maxWidth: "75%",
   },
+  senderNameAboveBubble: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#3D88F7",
+    marginBottom: 4,
+    marginLeft: 4,
+  },
   bubble: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -454,13 +369,19 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     overflow: "hidden",
-    borderRadius: 8,
+    borderRadius: 12,
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
   },
   imageLoading: {
     width: 200,
     height: 200,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 12,
   },
   senderName: {
     fontSize: 12,
@@ -513,5 +434,80 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#93C5FD",
     fontWeight: "500",
+  },
+  originalMessageContainer: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(61, 136, 247, 0.15)",
+  },
+  originalMessageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  originalMessageHeaderText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#93C5FD",
+  },
+  hideButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#60A5FA",
+  },
+  originalMessageContent: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+  },
+  originalMessageText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#E5E7EB",
+  },
+  culturalHintsContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(61, 136, 247, 0.3)",
+  },
+  culturalHintsTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#93C5FD",
+  },
+  culturalHintText: {
+    fontSize: 12,
+    lineHeight: 20,
+    marginBottom: 6,
+    paddingLeft: 4,
+    color: "#C7D2FE",
+  },
+  slangContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(61, 136, 247, 0.3)",
+  },
+  slangTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#FCD34D",
+  },
+  slangText: {
+    fontSize: 12,
+    lineHeight: 20,
+    marginBottom: 6,
+    paddingLeft: 4,
+    color: "#FEF3C7",
+  },
+  slangTerm: {
+    fontWeight: "600",
   },
 });
