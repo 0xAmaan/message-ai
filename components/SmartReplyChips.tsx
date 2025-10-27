@@ -21,9 +21,10 @@ export const SmartReplyChips = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
-  // Query smart replies from Convex
+  // Query smart replies from Convex for this specific user
   const smartReply = useQuery(api.smartReplies.getSmartReplies, {
     conversationId,
+    userId: currentUserId,
   });
 
   // Query messages to check if last message is from current user

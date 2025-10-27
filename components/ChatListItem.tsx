@@ -106,12 +106,42 @@ export const ChatListItem = ({
     }
   })();
 
-  // Last message preview - use translation if available
-  const lastMessageText = lastMessage
-    ? lastMessage.imageId
-      ? "📷 Image"
-      : lastMessageTranslation?.translatedText || lastMessage.content
-    : "No messages yet";
+  // Last message preview - use translation if available, show loading if pending
+  const lastMessageText = (() => {
+    if (!lastMessage) return "No messages yet";
+    if (lastMessage.imageId) return "📷 Image";
+    if (!lastMessage.content) return "No messages yet";
+
+    // Skip translation for messages sent by current user
+    if (lastMessage.senderId === currentUserId) {
+      return lastMessage.content;
+    }
+
+    // Get the source language of the message
+    const sourceLanguage = lastMessageTranslation?.detectedSourceLanguage || lastMessage.detectedSourceLanguage;
+    const preferredLanguage = currentUser?.preferredLanguage;
+
+    // If we have a translation, use it
+    if (lastMessageTranslation?.translatedText) {
+      return lastMessageTranslation.translatedText;
+    }
+
+    // If user has a preferred language set and it's a message from someone else
+    if (preferredLanguage && preferredLanguage !== "English") {
+      // If source language is unknown (still being detected), show loading
+      if (!sourceLanguage) {
+        return "Translating...";
+      }
+
+      // If source language is different from preferred language but no translation yet, show loading
+      if (sourceLanguage !== preferredLanguage) {
+        return "Translating...";
+      }
+    }
+
+    // Default: show original content
+    return lastMessage.content;
+  })();
 
   // Time formatting
   const formatTime = (timestamp: number) => {

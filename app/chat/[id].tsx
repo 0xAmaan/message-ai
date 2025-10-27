@@ -393,7 +393,7 @@ const ChatScreen = () => {
         setPendingMessageIds((prev) => new Map(prev).set(tempId, messageId));
 
         // Clear cached smart replies
-        await clearSmartReplies({ conversationId });
+        await clearSmartReplies({ conversationId, userId: user.id });
 
         // Note: Optimistic message will be automatically removed by the cleanup effect
         // once the real message appears in the query results
@@ -445,7 +445,7 @@ const ChatScreen = () => {
 
         // Clear smart replies when user sends an image
         setShowSmartReplies(false);
-        await clearSmartReplies({ conversationId });
+        await clearSmartReplies({ conversationId, userId: user.id });
 
         // Send message with image
         await sendMessage({

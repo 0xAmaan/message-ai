@@ -52,9 +52,16 @@ export default defineSchema({
   smartReplies: defineTable({
     conversationId: v.id("conversations"),
     lastMessageId: v.id("messages"), // Which message triggered this
+    userId: v.optional(v.string()), // clerkId of the user these replies are for (optional for migration)
     suggestions: v.array(v.string()), // Array of 3 reply options
     generatedAt: v.number(),
-  }).index("by_conversation_message", ["conversationId", "lastMessageId"]),
+  })
+    .index("by_conversation_message", ["conversationId", "lastMessageId"])
+    .index("by_user_conversation_message", [
+      "userId",
+      "conversationId",
+      "lastMessageId",
+    ]),
 
   // Message translations (cached AI translations)
   messageTranslations: defineTable({

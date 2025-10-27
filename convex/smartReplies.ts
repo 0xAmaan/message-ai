@@ -160,6 +160,7 @@ ${conversationContext}`,
       await ctx.runMutation(api.smartReplies.saveSmartReplies, {
         conversationId: args.conversationId,
         lastMessageId: lastMessage._id,
+        userId: args.currentUserId,
         suggestions,
       });
 
@@ -179,14 +180,16 @@ export const saveSmartReplies = mutation({
   args: {
     conversationId: v.id("conversations"),
     lastMessageId: v.id("messages"),
+    userId: v.string(),
     suggestions: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    // Check if suggestions already exist for this message
+    // Check if suggestions already exist for this user and message
     const existing = await ctx.db
       .query("smartReplies")
-      .withIndex("by_conversation_message", (q) =>
+      .withIndex("by_user_conversation_message", (q) =>
         q
+          .eq("userId", args.userId)
           .eq("conversationId", args.conversationId)
           .eq("lastMessageId", args.lastMessageId),
       )
@@ -203,6 +206,7 @@ export const saveSmartReplies = mutation({
       await ctx.db.insert("smartReplies", {
         conversationId: args.conversationId,
         lastMessageId: args.lastMessageId,
+        userId: args.userId,
         suggestions: args.suggestions,
         generatedAt: Date.now(),
       });
@@ -210,10 +214,11 @@ export const saveSmartReplies = mutation({
   },
 });
 
-// Get smart replies for a conversation
+// Get smart replies for a conversation and user
 export const getSmartReplies = query({
   args: {
     conversationId: v.id("conversations"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
     // Get the latest message in the conversation
@@ -231,30 +236,37 @@ export const getSmartReplies = query({
 
     const latestMessage = messages[0];
 
-    // Get smart replies for this message
+    // Get smart replies for this user and message
     const smartReply = await ctx.db
       .query("smartReplies")
-      .withIndex("by_conversation_message", (q) =>
+      .withIndex("by_user_conversation_message", (q) =>
         q
+          .eq("userId", args.userId)
           .eq("conversationId", args.conversationId)
           .eq("lastMessageId", latestMessage._id),
       )
       .first();
 
+    // Filter out old entries without userId (migration - they'll regenerate)
+    if (smartReply && !smartReply.userId) {
+      return null;
+    }
+
     return smartReply;
   },
 });
 
-// Clear smart replies for a conversation (when user sends a message)
+// Clear smart replies for a user in a conversation (when user sends a message)
 export const clearSmartReplies = mutation({
   args: {
     conversationId: v.id("conversations"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
     const smartReplies = await ctx.db
       .query("smartReplies")
-      .withIndex("by_conversation_message", (q) =>
-        q.eq("conversationId", args.conversationId),
+      .withIndex("by_user_conversation_message", (q) =>
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId),
       )
       .collect();
 
